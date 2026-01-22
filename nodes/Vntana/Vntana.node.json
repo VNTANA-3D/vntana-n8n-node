@@ -1,0 +1,36 @@
+{
+	"node": "n8n-nodes-vntana.vntana",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": [
+		"Marketing & Content",
+		"Miscellaneous"
+	],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://help.vntana.com/api-authentication"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://help.vntana.com/api-documentation"
+			}
+		]
+	},
+	"alias": [
+		"3D",
+		"3D content",
+		"3D models",
+		"GLB",
+		"USDZ",
+		"product visualization",
+		"AR",
+		"augmented reality"
+	],
+	"subcategories": {
+		"Marketing & Content": [
+			"Content"
+		]
+	}
+}
