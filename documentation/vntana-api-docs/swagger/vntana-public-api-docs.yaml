@@ -1,0 +1,2402 @@
+openapi: 3.0.1
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://api.vntana.com
+  description: Generated server url
+paths:
+  /variant-groups/organizations/{organizationSlug}/clients/{clientSlug}:
+    post:
+      tags:
+      - Operations about variant groups
+      summary: Get variant group details by uuid.
+      operationId: getByUuid
+      parameters:
+      - name: organizationSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: clientSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiVariantGroupDetailsRequestModel"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VariantGroupGetByUuidResultResponseOk"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VariantGroupGetByUuidResultResponseNotFound"
+        "422":
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VariantGroupGetByUuidResultResponseUnprocessable"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiVariantGroupDetailsResultResponse"
+  /showrooms/organizations/{organizationSlug}:
+    post:
+      tags:
+      - Operations about showrooms
+      summary: Get showroom by uuid legacy
+      operationId: getByUuid_1
+      parameters:
+      - name: organizationSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiShowroomDetailsRequestModel"
+        required: true
+      responses:
+        "409":
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ShowroomGetByUuidResultResponseConflict"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ShowroomGetByUuidResultResponseOk"
+        "404":
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ShowroomGetByUuidResultResponseNotFound"
+        "403":
+          description: Forbidden
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiShowroomDetailsResultResponse"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ShowroomGetByUuidResultResponseUnprocessable"
+  /showrooms/combined-sharelink:
+    post:
+      tags:
+      - Operations about showrooms
+      summary: Get showroom for share link
+      operationId: getForShareLink
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiShowroomShareLinkRequestModel"
+        required: true
+      responses:
+        "409":
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ShowroomGetByUuidResultResponseConflict"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiShowroomShareLinkResultResponse"
+        "404":
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ShowroomGetByUuidResultResponseNotFound"
+        "403":
+          description: Forbidden
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiShowroomShareLinkResultResponse"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ShowroomGetByUuidResultResponseUnprocessable"
+  /products/organizations/{organizationSlug}/clients/{clientSlug}:
+    post:
+      tags:
+      - Operations about assets
+      summary: Search assets by defined parameters
+      operationId: search
+      parameters:
+      - name: organizationSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: clientSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: session
+        in: query
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiSearchProductApiRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateProductSearchResultResponseOk"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/GenerateProductSearchResultResponseUnprocessable"
+        "404":
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SearchProductApiResponse"
+        "403":
+          description: Forbidden
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SearchProductApiResponse"
+  /hotspots/search/organizations/{organizationSlug}/clients/{clientSlug}:
+    post:
+      tags:
+      - Operations about hotspots
+      summary: Search hotspots of product by productUuid
+      operationId: getByProductUuid
+      parameters:
+      - name: organizationSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: clientSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchHotspotRequest"
+        required: true
+      responses:
+        "422":
+          description: Unprocessable Entity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateHotspotSearchResultResponseUnprocessable"
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateHotspotSearchResultResponseOk"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchHotspotResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchHotspotResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchHotspotResponse"
+  /assets/sharelinks/by-uuid:
+    post:
+      tags:
+      - Operations about assets' sharelinks
+      summary: Get public assets by sharelink uuid
+      description: "Get public assets by sharelink uuid. Possible errors: UNAUTHORIZED,\
+        \ NOT_FOUND, MISSING_UUID, MISSING_PAGE, MISSING_SIZE, INVALID_PAGE, INVALID_SIZE"
+      operationId: getByUuid_2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiProductShareLinkRequestModel"
+        required: true
+      responses:
+        "409":
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ShowroomGetByUuidResultResponseConflict"
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiShowroomShareLinkResultResponse"
+        "404":
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ShowroomGetByUuidResultResponseNotFound"
+        "403":
+          description: Forbidden
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ProductSharelinkGetResultResponse"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ShowroomGetByUuidResultResponseUnprocessable"
+  /viewer-presets/default/{organizationSlug}:
+    get:
+      tags:
+      - Operations about viewer presets
+      summary: Get default viewer preset by organization and client if provided.
+      operationId: getDefault
+      parameters:
+      - name: organizationSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: clientSlug
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ViewerPresetResultResponse"
+  /viewer-presets/default/system:
+    get:
+      tags:
+      - Operations about viewer presets
+      summary: Get system default viewer preset.
+      operationId: getSystemDefault
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ViewerPresetResultResponse"
+  /variant-groups/organizations/{organizationSlug}/clients/{clientSlug}/{uuid}/thumbnail:
+    get:
+      tags:
+      - Operations about variant groups
+      summary: Get variant group thumbnail by variant group uuid.
+      operationId: loadClientResource
+      parameters:
+      - name: organizationSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: clientSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            image/jpeg, image/jpg, image/gif, image/bmp, image/tiff, image/png, image/svg: {}
+        "404":
+          description: Not Found
+  /showrooms/organizations/{organizationSlug}/{uuid}:
+    get:
+      tags:
+      - Operations about showrooms
+      summary: Check showroom by uuid
+      operationId: getPublicity
+      parameters:
+      - name: organizationSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ShowroomGetPublicityResultResponseOk"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ShowroomGetPublicityResultResponseUnprocessable"
+        "404":
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ShowroomGetPublicityResultResponseNotFound"
+        "403":
+          description: Forbidden
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiShowroomPublicityResultResponse"
+      deprecated: true
+  /showrooms/images/{uuid}/{blobId}:
+    get:
+      tags:
+      - Operations about showrooms
+      summary: Get showroom image by blob id
+      operationId: loadImage
+      parameters:
+      - name: blobId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: download
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - name: options
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            image/jpeg, image/jpg, image/gif, image/bmp, image/tiff, image/png, image/svg: {}
+  /products/{uuid}/organizations/{organizationSlug}/clients/{clientSlug}:
+    get:
+      tags:
+      - Operations about assets
+      summary: Get asset details by uuid
+      operationId: getByUuid_3
+      parameters:
+      - name: organizationSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: clientSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: session
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateProductSearchResultResponseOk"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/GenerateProductSearchResultResponseUnprocessable"
+        "404":
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiGetProductResponse"
+        "403":
+          description: Forbidden
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiGetProductResponse"
+  /hotspots/images/products/{productUuid}/organizations/{organizationSlug}/clients/{clientSlug}/{blobId}:
+    get:
+      tags:
+      - Operations about hotspots
+      summary: Load hotspot image by blob id
+      operationId: loadImage_1
+      parameters:
+      - name: productUuid
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: organizationSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: clientSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: blobId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            image/jpeg, image/jpg, image/gif, image/bmp, image/tiff, image/png, image/svg: {}
+        "404":
+          description: Not Found
+        "403":
+          description: Forbidden
+        "401":
+          description: Unauthorized
+  /assets/thumbnail/products/{productUuid}/organizations/{organizationSlug}/clients/{clientSlug}:
+    get:
+      tags:
+      - Operations about assets
+      summary: Download asset thumbnail by asset uuid
+      operationId: loadThumbnail
+      parameters:
+      - name: productUuid
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: organizationSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: clientSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: session
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: download
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - name: options
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            image/jpeg, image/jpg, image/gif, image/bmp, image/tiff, image/png, image/svg: {}
+        "404":
+          description: Not Found
+        "403":
+          description: Forbidden
+  /assets/storage/download/test-session/{uuid}:
+    get:
+      tags:
+      - Operations about assets
+      summary: Returns optimized GLB and USDZ signed-urls by test session uuid
+      operationId: getDownloadSignUrlTestSession
+      parameters:
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageResourceTestSessionResponse"
+        "404":
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StorageResourceTestSessionResponse"
+        "403":
+          description: Forbidden
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StorageResourceTestSessionResponse"
+  /assets/products/{productUuid}/organizations/{organizationSlug}/clients/{clientSlug}/{blobId}:
+    get:
+      tags:
+      - Operations about assets
+      summary: Download asset model
+      operationId: loadModel
+      parameters:
+      - name: productUuid
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: organizationSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: clientSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: blobId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: session
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: download
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: OK
+          content:
+            model/gltf-binary, model/vnd.usdz+zip, application/octet-stream: {}
+        "404":
+          description: Not Found
+        "403":
+          description: Forbidden
+  /assets/products/original-asset/{productUuid}/organizations/{organizationSlug}/clients/{clientSlug}/{blobId}:
+    get:
+      tags:
+      - Operations about assets
+      summary: Download original asset by blob id
+      operationId: loadOriginalAsset
+      parameters:
+      - name: productUuid
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: organizationSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: clientSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: blobId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: session
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: download
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: OK
+          content:
+            application/octet-stream: {}
+        "404":
+          description: Not Found
+        "403":
+          description: Forbidden
+  /assets/organizations/{organizationSlug}/clients/{clientSlug}/thumbnail/{thumbnailUuid}:
+    get:
+      tags:
+      - Operations about assets
+      summary: Download asset thumbnail by thumbnail uuid
+      operationId: loadThumbnailUuid
+      parameters:
+      - name: organizationSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: clientSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: thumbnailUuid
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: download
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - name: options
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            image/jpeg, image/jpg, image/gif, image/bmp, image/tiff, image/png, image/svg: {}
+        "404":
+          description: Not Found
+        "403":
+          description: Forbidden
+components:
+  schemas:
+    ApiVariantGroupDetailsRequestModel:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        uuid:
+          type: string
+    ApiShowroomDetailsProductModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        clientSlug:
+          type: string
+        description:
+          type: string
+        locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductLocationsResponseModel"
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductTagsResponseModel"
+        attributes:
+          type: object
+          additionalProperties:
+            type: string
+        conversionStatus:
+          type: string
+          enum:
+          - PENDING
+          - CONVERTING
+          - COMPLETED
+          - FAILED
+          - NO_ASSET
+          - TERMINATED
+          - NOT_APPLICABLE
+        asset:
+          $ref: "#/components/schemas/ShowroomViewAssetModel"
+        rendererConfigs:
+          type: string
+        pipelineUuid:
+          type: string
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+        viewerSettings:
+          $ref: "#/components/schemas/ViewerSettingsModel"
+    ApiShowroomDetailsResponseModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        organizationSlug:
+          type: string
+        organizationName:
+          type: string
+        clientUuids:
+          uniqueItems: true
+          type: array
+          items:
+            type: string
+        totalCount:
+          type: integer
+          format: int64
+        productAttributes:
+          type: array
+          items:
+            type: string
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiShowroomDetailsProductModel"
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+        logoBlobId:
+          type: string
+        viewInfo:
+          $ref: "#/components/schemas/ShowroomDetailsViewInfoResponseModel"
+        watermark:
+          type: boolean
+    ProductLocationsResponseModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+    ProductTagsResponseModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+    ShowroomDetailsViewInfoResponseModel:
+      type: object
+      properties:
+        layoutAttributes:
+          type: object
+          additionalProperties:
+            type: string
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShowroomProductGroupResponseModel"
+        displayShowroomName:
+          type: boolean
+    ShowroomProductGroupContentViewInfoModel:
+      type: object
+      properties:
+        product:
+          $ref: "#/components/schemas/ShowroomViewProductModel"
+        isVariant:
+          type: boolean
+        variantProducts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShowroomViewProductModel"
+        variantGroup:
+          $ref: "#/components/schemas/ShowroomViewVariantGroupModel"
+        visible:
+          type: boolean
+        order:
+          type: integer
+          format: int32
+        viewAttributes:
+          type: object
+          additionalProperties:
+            type: string
+    ShowroomProductGroupResponseModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        title:
+          type: string
+        productsInfo:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShowroomProductGroupContentViewInfoModel"
+        dividers:
+          type: array
+          items:
+            type: string
+            enum:
+            - TOP
+            - BOTTOM
+        visible:
+          type: boolean
+        attributes:
+          type: object
+          additionalProperties:
+            type: string
+    ShowroomViewAssetModel:
+      type: object
+      properties:
+        assetBlobId:
+          type: string
+        thumbnailBlobId:
+          type: string
+        assetOriginalName:
+          type: string
+        assetOriginalSize:
+          type: integer
+          format: int64
+        models:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShowroomViewAssetModelModel"
+    ShowroomViewAssetModelModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        conversionFormat:
+          type: string
+          enum:
+          - GLB
+          - USDZ
+          - OPTIMIZED
+          - FBX
+          - OBJ
+          - STEP
+        conversionStatus:
+          type: string
+          enum:
+          - PENDING
+          - CONVERTING
+          - COMPLETED
+          - FAILED
+          - NO_ASSET
+          - TERMINATED
+          - NOT_APPLICABLE
+        modelBlobId:
+          type: string
+        modelSize:
+          type: integer
+          format: int64
+    ShowroomViewProductModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        clientUuid:
+          type: string
+        clientSlug:
+          type: string
+        description:
+          type: string
+        productStatus:
+          type: string
+          enum:
+          - DRAFT
+          - WAITING_REVIEW
+          - APPROVED
+          - REJECTED
+          - LIVE_INTERNAL
+          - LIVE_PUBLIC
+          - CUSTOMER_REVIEW
+          - CUSTOMER_APPROVED
+          - CUSTOMER_REJECTED
+          - CUSTOMER_DROPPED
+          - CUSTOMER_HOLD
+          - LIVE
+          - INTERNAL
+        locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductLocationsResponseModel"
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductTagsResponseModel"
+        attributes:
+          type: object
+          additionalProperties:
+            type: string
+        conversionStatus:
+          type: string
+          enum:
+          - PENDING
+          - CONVERTING
+          - COMPLETED
+          - FAILED
+          - NO_ASSET
+          - TERMINATED
+          - NOT_APPLICABLE
+        asset:
+          $ref: "#/components/schemas/ShowroomViewAssetModel"
+        rendererConfigs:
+          type: string
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+        pipelineUuid:
+          type: string
+        assetType:
+          type: string
+          enum:
+          - THREE_D
+          - IMAGE
+          - VIDEO
+          - DOCUMENT
+          - PROJECT
+          - MATERIAL
+          - AUDIO
+          - NATIVE
+          - TRIM
+          - AVATAR
+          - NO_ASSET
+        viewerSettings:
+          $ref: "#/components/schemas/ViewerSettingsModel"
+    ShowroomViewVariantGroupModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        clientUuid:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum:
+          - LIVE
+          - DRAFT
+        productsUuids:
+          type: array
+          items:
+            type: string
+    VariantGroupGetByUuidResultResponseOk:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - MISSING_ORGANIZATION_UUID
+            - MISSING_CLIENT_UUID
+            - MISSING_ORGANIZATION_OR_CLIENT_UUID
+            - MISSING_NAME
+            - MISSING_PRODUCTS_UUIDS
+            - VARIANT_GROUP_NOT_FOUND
+            - MISSING_UUID
+            - MISSING_UUIDS
+            - MISSING_STATUS
+            - INVALID_PRODUCTS_SIZE
+            - INVALID_PRODUCT_UUID
+            - INVALID_UUIDS
+            - PRODUCT_NOT_FOUND
+            - HAS_NOT_LIVE_PRODUCT
+            - VARIANT_GROUP_ALREADY_HAS_THE_SAME_STATUS
+            - TAG_NOT_FOUND
+            - ORGANIZATION_NOT_FOUND
+            - CLIENT_ORGANIZATION_NOT_FOUND
+            - PRODUCTS_NOT_IN_SAME_ORGANIZATION_OR_CLIENT
+            - NO_3D_PRODUCTS
+            - MISSING_CLIENTS_UUIDS
+            - MISSING_SORTS
+        success:
+          type: boolean
+        response:
+          $ref: "#/components/schemas/ApiShowroomDetailsResponseModel"
+    ViewerSettingsModel:
+      type: object
+      properties:
+        value:
+          type: string
+        presetUuid:
+          type: string
+        showHotspotNumbers:
+          type: boolean
+        config:
+          type: string
+        ui:
+          type: string
+    VariantGroupGetByUuidResultResponseNotFound:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - MISSING_ORGANIZATION_UUID
+            - MISSING_CLIENT_UUID
+            - MISSING_ORGANIZATION_OR_CLIENT_UUID
+            - MISSING_NAME
+            - MISSING_PRODUCTS_UUIDS
+            - VARIANT_GROUP_NOT_FOUND
+            - MISSING_UUID
+            - MISSING_UUIDS
+            - MISSING_STATUS
+            - INVALID_PRODUCTS_SIZE
+            - INVALID_PRODUCT_UUID
+            - INVALID_UUIDS
+            - PRODUCT_NOT_FOUND
+            - HAS_NOT_LIVE_PRODUCT
+            - VARIANT_GROUP_ALREADY_HAS_THE_SAME_STATUS
+            - TAG_NOT_FOUND
+            - ORGANIZATION_NOT_FOUND
+            - CLIENT_ORGANIZATION_NOT_FOUND
+            - PRODUCTS_NOT_IN_SAME_ORGANIZATION_OR_CLIENT
+            - NO_3D_PRODUCTS
+            - MISSING_CLIENTS_UUIDS
+            - MISSING_SORTS
+        success:
+          type: boolean
+    VariantGroupGetByUuidResultResponseUnprocessable:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - MISSING_ORGANIZATION_UUID
+            - MISSING_CLIENT_UUID
+            - MISSING_ORGANIZATION_OR_CLIENT_UUID
+            - MISSING_NAME
+            - MISSING_PRODUCTS_UUIDS
+            - VARIANT_GROUP_NOT_FOUND
+            - MISSING_UUID
+            - MISSING_UUIDS
+            - MISSING_STATUS
+            - INVALID_PRODUCTS_SIZE
+            - INVALID_PRODUCT_UUID
+            - INVALID_UUIDS
+            - PRODUCT_NOT_FOUND
+            - HAS_NOT_LIVE_PRODUCT
+            - VARIANT_GROUP_ALREADY_HAS_THE_SAME_STATUS
+            - TAG_NOT_FOUND
+            - ORGANIZATION_NOT_FOUND
+            - CLIENT_ORGANIZATION_NOT_FOUND
+            - PRODUCTS_NOT_IN_SAME_ORGANIZATION_OR_CLIENT
+            - NO_3D_PRODUCTS
+            - MISSING_CLIENTS_UUIDS
+            - MISSING_SORTS
+        success:
+          type: boolean
+    ApiVariantGroupDetailsResponseModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        organizationUuid:
+          type: string
+        clientUuid:
+          type: string
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/VariantGroupTagResponseModel"
+        products:
+          $ref: "#/components/schemas/SearchProductGridApiResponseModel"
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+        watermark:
+          type: boolean
+    ApiVariantGroupDetailsResultResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - MISSING_ORGANIZATION_UUID
+            - MISSING_CLIENT_UUID
+            - MISSING_ORGANIZATION_OR_CLIENT_UUID
+            - MISSING_NAME
+            - MISSING_PRODUCTS_UUIDS
+            - VARIANT_GROUP_NOT_FOUND
+            - MISSING_UUID
+            - MISSING_UUIDS
+            - MISSING_STATUS
+            - INVALID_PRODUCTS_SIZE
+            - INVALID_PRODUCT_UUID
+            - INVALID_UUIDS
+            - PRODUCT_NOT_FOUND
+            - HAS_NOT_LIVE_PRODUCT
+            - VARIANT_GROUP_ALREADY_HAS_THE_SAME_STATUS
+            - TAG_NOT_FOUND
+            - ORGANIZATION_NOT_FOUND
+            - CLIENT_ORGANIZATION_NOT_FOUND
+            - PRODUCTS_NOT_IN_SAME_ORGANIZATION_OR_CLIENT
+            - NO_3D_PRODUCTS
+            - MISSING_CLIENTS_UUIDS
+            - MISSING_SORTS
+        response:
+          $ref: "#/components/schemas/ApiVariantGroupDetailsResponseModel"
+    ProductAssetModel:
+      type: object
+      properties:
+        thumbnailBlobId:
+          type: string
+        assetBlobId:
+          type: string
+        assetOriginalName:
+          type: string
+        conversionFormats:
+          type: array
+          items:
+            type: string
+            enum:
+            - GLB
+            - USDZ
+            - OPTIMIZED
+            - FBX
+            - OBJ
+            - STEP
+        models:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductAssetModelModel"
+    ProductAssetModelModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        conversionFormat:
+          type: string
+          enum:
+          - GLB
+          - USDZ
+          - OPTIMIZED
+          - FBX
+          - OBJ
+          - STEP
+        modelBlobId:
+          type: string
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - WAITING_REVIEW
+          - APPROVED
+          - REJECTED
+          - LIVE_INTERNAL
+          - LIVE_PUBLIC
+          - CUSTOMER_REVIEW
+          - CUSTOMER_APPROVED
+          - CUSTOMER_REJECTED
+          - CUSTOMER_DROPPED
+          - CUSTOMER_HOLD
+          - LIVE
+          - INTERNAL
+        assetOriginalName:
+          type: string
+    ProductLocationsSearchResponseModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+    ProductSearchApiResponseModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductLocationsSearchResponseModel"
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductTagsSearchResponseModel"
+        asset:
+          $ref: "#/components/schemas/ProductAssetModel"
+        created:
+          type: string
+          format: date-time
+    ProductTagsSearchResponseModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+    SearchProductGridApiResponseModel:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int32
+        grid:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductSearchApiResponseModel"
+    VariantGroupTagResponseModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+    ApiShowroomDetailsRequestModel:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        uuid:
+          type: string
+        password:
+          type: string
+    ShowroomGetByUuidResultResponseConflict:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_UUID
+            - MISSING_UUIDS
+            - MISSING_NAME
+            - MISSING_PRODUCT_UUIDS
+            - MISSING_ORGANIZATION_UUID
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - MISSING_GROUP_CONTENTS
+            - MISSING_PRODUCT_UUID_IN_GROUP
+            - INVALID_PRODUCT_UUID_IN_GROUP
+            - INVALID_VARIANT_GROUP_UUID_IN_GROUP
+            - INVALID_PRODUCTS_SIZE
+            - INVALID_PASSWORD
+            - INVALID_PAGE
+            - INVALID_SIZE
+            - INCORRECT_PASSWORD
+            - INVALID_PRODUCT_UUID
+            - INVALID_VARIANT_GROUP_UUID
+            - SHOWROOM_NOT_FOUND
+            - PRODUCT_NOT_FOUND
+            - VARIANT_GROUP_NOT_FOUND
+            - DUPLICATED_PRODUCTS_UUIDS
+            - DUPLICATED_VARIANT_GROUPS_UUIDS
+            - PRODUCTS_NOT_IN_SAME_ORGANIZATION
+            - INVALID_LAYOUT_ATTRIBUTE_PRODUCTS_PER_ROW
+            - INVALID_LAYOUT_ATTRIBUTE_BACKGROUND_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_DIVIDER_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_TEXT_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_IMAGE_STYLE
+            - TAG_NOT_FOUND
+            - INVALID_SEARCH_TERM_SIZE
+        success:
+          type: boolean
+    ShowroomGetByUuidResultResponseOk:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_UUID
+            - MISSING_UUIDS
+            - MISSING_NAME
+            - MISSING_PRODUCT_UUIDS
+            - MISSING_ORGANIZATION_UUID
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - MISSING_GROUP_CONTENTS
+            - MISSING_PRODUCT_UUID_IN_GROUP
+            - INVALID_PRODUCT_UUID_IN_GROUP
+            - INVALID_VARIANT_GROUP_UUID_IN_GROUP
+            - INVALID_PRODUCTS_SIZE
+            - INVALID_PASSWORD
+            - INVALID_PAGE
+            - INVALID_SIZE
+            - INCORRECT_PASSWORD
+            - INVALID_PRODUCT_UUID
+            - INVALID_VARIANT_GROUP_UUID
+            - SHOWROOM_NOT_FOUND
+            - PRODUCT_NOT_FOUND
+            - VARIANT_GROUP_NOT_FOUND
+            - DUPLICATED_PRODUCTS_UUIDS
+            - DUPLICATED_VARIANT_GROUPS_UUIDS
+            - PRODUCTS_NOT_IN_SAME_ORGANIZATION
+            - INVALID_LAYOUT_ATTRIBUTE_PRODUCTS_PER_ROW
+            - INVALID_LAYOUT_ATTRIBUTE_BACKGROUND_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_DIVIDER_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_TEXT_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_IMAGE_STYLE
+            - TAG_NOT_FOUND
+            - INVALID_SEARCH_TERM_SIZE
+        success:
+          type: boolean
+        response:
+          $ref: "#/components/schemas/ApiShowroomDetailsResponseModel"
+    ShowroomGetByUuidResultResponseNotFound:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_UUID
+            - MISSING_UUIDS
+            - MISSING_NAME
+            - MISSING_PRODUCT_UUIDS
+            - MISSING_ORGANIZATION_UUID
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - MISSING_GROUP_CONTENTS
+            - MISSING_PRODUCT_UUID_IN_GROUP
+            - INVALID_PRODUCT_UUID_IN_GROUP
+            - INVALID_VARIANT_GROUP_UUID_IN_GROUP
+            - INVALID_PRODUCTS_SIZE
+            - INVALID_PASSWORD
+            - INVALID_PAGE
+            - INVALID_SIZE
+            - INCORRECT_PASSWORD
+            - INVALID_PRODUCT_UUID
+            - INVALID_VARIANT_GROUP_UUID
+            - SHOWROOM_NOT_FOUND
+            - PRODUCT_NOT_FOUND
+            - VARIANT_GROUP_NOT_FOUND
+            - DUPLICATED_PRODUCTS_UUIDS
+            - DUPLICATED_VARIANT_GROUPS_UUIDS
+            - PRODUCTS_NOT_IN_SAME_ORGANIZATION
+            - INVALID_LAYOUT_ATTRIBUTE_PRODUCTS_PER_ROW
+            - INVALID_LAYOUT_ATTRIBUTE_BACKGROUND_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_DIVIDER_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_TEXT_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_IMAGE_STYLE
+            - TAG_NOT_FOUND
+            - INVALID_SEARCH_TERM_SIZE
+        success:
+          type: boolean
+    ShowroomGetByUuidResultResponseUnprocessable:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_UUID
+            - MISSING_UUIDS
+            - MISSING_NAME
+            - MISSING_PRODUCT_UUIDS
+            - MISSING_ORGANIZATION_UUID
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - MISSING_GROUP_CONTENTS
+            - MISSING_PRODUCT_UUID_IN_GROUP
+            - INVALID_PRODUCT_UUID_IN_GROUP
+            - INVALID_VARIANT_GROUP_UUID_IN_GROUP
+            - INVALID_PRODUCTS_SIZE
+            - INVALID_PASSWORD
+            - INVALID_PAGE
+            - INVALID_SIZE
+            - INCORRECT_PASSWORD
+            - INVALID_PRODUCT_UUID
+            - INVALID_VARIANT_GROUP_UUID
+            - SHOWROOM_NOT_FOUND
+            - PRODUCT_NOT_FOUND
+            - VARIANT_GROUP_NOT_FOUND
+            - DUPLICATED_PRODUCTS_UUIDS
+            - DUPLICATED_VARIANT_GROUPS_UUIDS
+            - PRODUCTS_NOT_IN_SAME_ORGANIZATION
+            - INVALID_LAYOUT_ATTRIBUTE_PRODUCTS_PER_ROW
+            - INVALID_LAYOUT_ATTRIBUTE_BACKGROUND_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_DIVIDER_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_TEXT_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_IMAGE_STYLE
+            - TAG_NOT_FOUND
+            - INVALID_SEARCH_TERM_SIZE
+        success:
+          type: boolean
+    ApiShowroomDetailsResultResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_UUID
+            - MISSING_UUIDS
+            - MISSING_NAME
+            - MISSING_PRODUCT_UUIDS
+            - MISSING_ORGANIZATION_UUID
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - MISSING_GROUP_CONTENTS
+            - MISSING_PRODUCT_UUID_IN_GROUP
+            - INVALID_PRODUCT_UUID_IN_GROUP
+            - INVALID_VARIANT_GROUP_UUID_IN_GROUP
+            - INVALID_PRODUCTS_SIZE
+            - INVALID_PASSWORD
+            - INVALID_PAGE
+            - INVALID_SIZE
+            - INCORRECT_PASSWORD
+            - INVALID_PRODUCT_UUID
+            - INVALID_VARIANT_GROUP_UUID
+            - SHOWROOM_NOT_FOUND
+            - PRODUCT_NOT_FOUND
+            - VARIANT_GROUP_NOT_FOUND
+            - DUPLICATED_PRODUCTS_UUIDS
+            - DUPLICATED_VARIANT_GROUPS_UUIDS
+            - PRODUCTS_NOT_IN_SAME_ORGANIZATION
+            - INVALID_LAYOUT_ATTRIBUTE_PRODUCTS_PER_ROW
+            - INVALID_LAYOUT_ATTRIBUTE_BACKGROUND_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_DIVIDER_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_TEXT_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_IMAGE_STYLE
+            - TAG_NOT_FOUND
+            - INVALID_SEARCH_TERM_SIZE
+        response:
+          $ref: "#/components/schemas/ApiShowroomDetailsResponseModel"
+    ApiShowroomShareLinkRequestModel:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        uuid:
+          type: string
+        shareLinkUuid:
+          type: string
+        password:
+          type: string
+    ApiShareLinkResponseModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        customerName:
+          type: string
+        logoBlobId:
+          type: string
+        expirationDate:
+          type: string
+          format: date
+        productAttributes:
+          type: array
+          items:
+            type: string
+    ApiShowroomShareLinkAwareResponseModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        organizationName:
+          type: string
+        clientUuids:
+          uniqueItems: true
+          type: array
+          items:
+            type: string
+        groupsCount:
+          type: integer
+          format: int64
+        productAttributes:
+          type: array
+          items:
+            type: string
+        logoBlobId:
+          type: string
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+        shareLink:
+          $ref: "#/components/schemas/ApiShareLinkResponseModel"
+        viewInfo:
+          $ref: "#/components/schemas/ShowroomDetailsViewInfoResponseModel"
+        watermark:
+          type: boolean
+    ApiShowroomShareLinkResultResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_UUID
+            - MISSING_SHOWROOM_UUID
+            - MISSING_CUSTOMER_NAME
+            - MISSING_STATUS
+            - MISSING_ORGANIZATION_UUID
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - MISSING_USER_UUID
+            - MISSING_START_DATE
+            - MISSING_END_DATE
+            - SHOWROOM_NOT_FOUND
+            - MISSING_PRODUCT_ORDER
+            - MISSING_PRODUCT_UUID_IN_ORDER
+            - INVALID_COUNT_IN_ORDER
+            - SHARELINK_NOT_FOUND
+            - INVALID_SHOWROOM_UUID
+            - INVALID_PAGE
+            - INVALID_SIZE
+            - ERROR_RETRIEVING_USERS
+            - ERROR_RETRIEVING_INVITATION_USERS
+            - MISSING_REVOKE_ACCESS_DATA
+            - PRODUCT_NOT_FOUND_IN_SHOWROOM
+            - VARIANT_GROUP_NOT_FOUND_IN_SHOWROOM
+            - PRODUCT_NOT_FOUND_IN_VARIANT_GROUP
+            - ORDER_NOT_FOUND
+            - INVALID_STATUS
+            - ORDER_REPORT_GENERATION_ERROR
+            - ORDER_REPORT_UPLOAD_ERROR
+            - ORDER_REPORT_TYPE_NOT_SUPPORTED
+            - ORDER_REPORT_NOT_FOUND
+            - INCORRECT_PASSWORD
+        response:
+          $ref: "#/components/schemas/ApiShowroomShareLinkAwareResponseModel"
+    ApiSearchProductApiRequest:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        searchTerm:
+          type: string
+        productName:
+          type: string
+        locationName:
+          type: string
+        tagName:
+          type: string
+        description:
+          type: string
+        attributeKey:
+          type: string
+        attributeValue:
+          type: string
+    GenerateProductSearchResultResponseOk:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_CLIENT_SLUG
+            - MISSING_ORGANIZATION_SLUG
+            - PRODUCT_NOT_FOUND
+        success:
+          type: boolean
+        response:
+          $ref: "#/components/schemas/ProductGridSearchApiResponseModel"
+    ProductGridSearchApiResponseModel:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int32
+        grid:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductSearchApiResponseModel"
+    GenerateProductSearchResultResponseUnprocessable:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_CLIENT_SLUG
+            - MISSING_ORGANIZATION_SLUG
+            - PRODUCT_NOT_FOUND
+        success:
+          type: boolean
+    SearchProductApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_CLIENT_SLUG
+            - MISSING_ORGANIZATION_SLUG
+            - PRODUCT_NOT_FOUND
+        response:
+          $ref: "#/components/schemas/ProductGridSearchApiResponseModel"
+    SearchHotspotRequest:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        productUuid:
+          type: string
+    GenerateHotspotSearchResultResponseUnprocessable:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_UUID
+            - MISSING_PRODUCT_UUID
+            - MISSING_USER_UUID
+            - MISSING_HOTSPOT_TYPE
+            - MISSING_DIMENSIONS
+            - MISSING_BLOB_ID
+            - MISSING_URL
+            - MISSING_AUTOPLAYING_FLAG
+            - MISSING_TEXT
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - HOTSPOT_NOT_FOUND
+            - PRODUCT_DOES_NOT_EXIST
+            - ORGANIZATION_UUID_MISMATCH
+            - PRODUCT_NOT_FOUND
+            - PRODUCT_ALREADY_LIVE
+            - INVALID_PRODUCT_UUID
+            - INVALID_TEXT_SIZE
+            - INVALID_CAMERA_SIZE
+            - INVALID_FORMAT
+            - INVALID_CONFIG_DIMENSIONS_VALUE
+            - INVALID_CONFIG_CAMERA_VALUE
+            - INVALID_DIMENSIONS_SIZE
+            - MISMATCH_HOTSPOT_TYPE
+            - INVALID_ADDITIONAL_SETTINGS_SIZE
+        success:
+          type: boolean
+    GenerateHotspotSearchResultResponseOk:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_UUID
+            - MISSING_PRODUCT_UUID
+            - MISSING_USER_UUID
+            - MISSING_HOTSPOT_TYPE
+            - MISSING_DIMENSIONS
+            - MISSING_BLOB_ID
+            - MISSING_URL
+            - MISSING_AUTOPLAYING_FLAG
+            - MISSING_TEXT
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - HOTSPOT_NOT_FOUND
+            - PRODUCT_DOES_NOT_EXIST
+            - ORGANIZATION_UUID_MISMATCH
+            - PRODUCT_NOT_FOUND
+            - PRODUCT_ALREADY_LIVE
+            - INVALID_PRODUCT_UUID
+            - INVALID_TEXT_SIZE
+            - INVALID_CAMERA_SIZE
+            - INVALID_FORMAT
+            - INVALID_CONFIG_DIMENSIONS_VALUE
+            - INVALID_CONFIG_CAMERA_VALUE
+            - INVALID_DIMENSIONS_SIZE
+            - MISMATCH_HOTSPOT_TYPE
+            - INVALID_ADDITIONAL_SETTINGS_SIZE
+        success:
+          type: boolean
+        response:
+          $ref: "#/components/schemas/HotspotGridResponseModel"
+    HotspotConfigResponseModel:
+      type: object
+      properties:
+        camera:
+          type: string
+        dimensions:
+          type: string
+    HotspotGridResponseModel:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int32
+        grid:
+          type: array
+          items:
+            $ref: "#/components/schemas/HotspotResponseModel"
+    HotspotResponseModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        type:
+          type: string
+          enum:
+          - TEXT
+          - IMAGE
+          - VIDEO
+        productUuid:
+          type: string
+        title:
+          type: string
+        dimensions:
+          type: string
+          deprecated: true
+        camera:
+          type: string
+          deprecated: true
+        additionalSettings:
+          type: string
+        config:
+          $ref: "#/components/schemas/HotspotConfigResponseModel"
+        userUuid:
+          type: string
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+      discriminator:
+        propertyName: type
+    SearchHotspotGridResponseModel:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int32
+        grid:
+          type: array
+          items:
+            oneOf:
+            - $ref: "#/components/schemas/SearchImageHotspotResponseModel"
+            - $ref: "#/components/schemas/SearchTextHotspotResponseModel"
+            - $ref: "#/components/schemas/SearchVideoHotspotResponseModel"
+    SearchHotspotResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_PRODUCT_UUID
+        response:
+          $ref: "#/components/schemas/SearchHotspotGridResponseModel"
+    SearchHotspotResponseModel:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - TEXT
+          - IMAGE
+          - VIDEO
+        productUuid:
+          type: string
+        dimensions:
+          type: string
+          deprecated: true
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+        camera:
+          type: string
+          deprecated: true
+        additionalSettings:
+          type: string
+        config:
+          $ref: "#/components/schemas/HotspotConfigResponseModel"
+      discriminator:
+        propertyName: type
+    SearchImageHotspotResponseModel:
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/SearchHotspotResponseModel"
+      - type: object
+        properties:
+          blobId:
+            type: string
+          description:
+            type: string
+    SearchTextHotspotResponseModel:
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/SearchHotspotResponseModel"
+      - type: object
+        properties:
+          text:
+            type: string
+    SearchVideoHotspotResponseModel:
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/SearchHotspotResponseModel"
+      - type: object
+        properties:
+          url:
+            type: string
+          description:
+            type: string
+          autoplaying:
+            type: boolean
+    ApiProductShareLinkRequestModel:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        uuid:
+          type: string
+    ProductSharelinkGetResponseModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        organizationUuid:
+          type: string
+        organizationSlug:
+          type: string
+        clientUuid:
+          type: string
+        totalCount:
+          type: integer
+          format: int64
+        sharelink:
+          type: string
+        productsUuids:
+          type: array
+          items:
+            type: string
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShowroomViewProductModel"
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+        configs:
+          type: object
+          additionalProperties:
+            type: object
+    ProductSharelinkGetResultResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_PRODUCTS_UUIDS
+            - MISSING_UUID
+            - MISSING_ORGANIZATION_UUID
+            - MISSING_CLIENT_UUID
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - INVALID_PAGE
+            - INVALID_SIZE
+            - PRODUCT_NOT_FOUND
+            - NOT_FOUND
+        response:
+          $ref: "#/components/schemas/ProductSharelinkGetResponseModel"
+    ViewerPresetResponseModel:
+      type: object
+      properties:
+        default:
+          type: boolean
+        uuid:
+          type: string
+        type:
+          type: string
+          enum:
+          - CLIENT
+          - ORGANIZATION
+          - SYSTEM
+        organizationUuid:
+          type: string
+        clientUuid:
+          type: string
+        name:
+          type: string
+        value:
+          type: string
+          deprecated: true
+        isDefault:
+          type: boolean
+        config:
+          type: string
+        ui:
+          type: string
+    ViewerPresetResultResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_VIEWER_PRESET_ORGANIZATION_UUID
+            - MISSING_VIEWER_PRESET_NAME
+            - MISSING_VIEWER_PRESET_VALUE
+            - MISSING_VIEWER_PRESET_CONFIG
+            - MISSING_VIEWER_PRESET_UI
+            - MISSING_USER_UUID
+            - MISSING_CLIENT_UUID
+            - MISSING_VIEWER_PRESET_TYPE
+            - MISSING_UUID
+            - MISSING_FIELDS_CHANGES
+            - MISSING_UPDATE_PRODUCTS_VALUE
+            - VIEWER_PRESET_NOT_FOUND
+            - INVALID_PRESET_TYPE
+            - MISSING_PERMISSIONS
+            - VIEWER_PRESET_NAME_ALREADY_EXISTS
+            - VIEWER_PRESET_SYSTEM_DEFAULT_CANNOT_BE_DELETED
+            - INVALID_VIEWER_PRESET_VALUE
+            - INVALID_FORMAT_VIEWER_PRESET_VALUE
+            - INVALID_FORMAT_VIEWER_PRESET_CONFIG
+            - VIEWER_PRESET_VALUE_TOO_LONG
+        response:
+          $ref: "#/components/schemas/ViewerPresetResponseModel"
+    CreateShowroomResponseModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+    ShowroomGetPublicityResultResponseOk:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_UUID
+            - MISSING_UUIDS
+            - MISSING_NAME
+            - MISSING_PRODUCT_UUIDS
+            - MISSING_ORGANIZATION_UUID
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - MISSING_GROUP_CONTENTS
+            - MISSING_PRODUCT_UUID_IN_GROUP
+            - INVALID_PRODUCT_UUID_IN_GROUP
+            - INVALID_VARIANT_GROUP_UUID_IN_GROUP
+            - INVALID_PRODUCTS_SIZE
+            - INVALID_PASSWORD
+            - INVALID_PAGE
+            - INVALID_SIZE
+            - INCORRECT_PASSWORD
+            - INVALID_PRODUCT_UUID
+            - INVALID_VARIANT_GROUP_UUID
+            - SHOWROOM_NOT_FOUND
+            - PRODUCT_NOT_FOUND
+            - VARIANT_GROUP_NOT_FOUND
+            - DUPLICATED_PRODUCTS_UUIDS
+            - DUPLICATED_VARIANT_GROUPS_UUIDS
+            - PRODUCTS_NOT_IN_SAME_ORGANIZATION
+            - INVALID_LAYOUT_ATTRIBUTE_PRODUCTS_PER_ROW
+            - INVALID_LAYOUT_ATTRIBUTE_BACKGROUND_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_DIVIDER_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_TEXT_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_IMAGE_STYLE
+            - TAG_NOT_FOUND
+            - INVALID_SEARCH_TERM_SIZE
+        success:
+          type: boolean
+        response:
+          $ref: "#/components/schemas/CreateShowroomResponseModel"
+    ShowroomGetPublicityResultResponseUnprocessable:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_UUID
+            - MISSING_UUIDS
+            - MISSING_NAME
+            - MISSING_PRODUCT_UUIDS
+            - MISSING_ORGANIZATION_UUID
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - MISSING_GROUP_CONTENTS
+            - MISSING_PRODUCT_UUID_IN_GROUP
+            - INVALID_PRODUCT_UUID_IN_GROUP
+            - INVALID_VARIANT_GROUP_UUID_IN_GROUP
+            - INVALID_PRODUCTS_SIZE
+            - INVALID_PASSWORD
+            - INVALID_PAGE
+            - INVALID_SIZE
+            - INCORRECT_PASSWORD
+            - INVALID_PRODUCT_UUID
+            - INVALID_VARIANT_GROUP_UUID
+            - SHOWROOM_NOT_FOUND
+            - PRODUCT_NOT_FOUND
+            - VARIANT_GROUP_NOT_FOUND
+            - DUPLICATED_PRODUCTS_UUIDS
+            - DUPLICATED_VARIANT_GROUPS_UUIDS
+            - PRODUCTS_NOT_IN_SAME_ORGANIZATION
+            - INVALID_LAYOUT_ATTRIBUTE_PRODUCTS_PER_ROW
+            - INVALID_LAYOUT_ATTRIBUTE_BACKGROUND_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_DIVIDER_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_TEXT_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_IMAGE_STYLE
+            - TAG_NOT_FOUND
+            - INVALID_SEARCH_TERM_SIZE
+        success:
+          type: boolean
+    ShowroomGetPublicityResultResponseNotFound:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_UUID
+            - MISSING_UUIDS
+            - MISSING_NAME
+            - MISSING_PRODUCT_UUIDS
+            - MISSING_ORGANIZATION_UUID
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - MISSING_GROUP_CONTENTS
+            - MISSING_PRODUCT_UUID_IN_GROUP
+            - INVALID_PRODUCT_UUID_IN_GROUP
+            - INVALID_VARIANT_GROUP_UUID_IN_GROUP
+            - INVALID_PRODUCTS_SIZE
+            - INVALID_PASSWORD
+            - INVALID_PAGE
+            - INVALID_SIZE
+            - INCORRECT_PASSWORD
+            - INVALID_PRODUCT_UUID
+            - INVALID_VARIANT_GROUP_UUID
+            - SHOWROOM_NOT_FOUND
+            - PRODUCT_NOT_FOUND
+            - VARIANT_GROUP_NOT_FOUND
+            - DUPLICATED_PRODUCTS_UUIDS
+            - DUPLICATED_VARIANT_GROUPS_UUIDS
+            - PRODUCTS_NOT_IN_SAME_ORGANIZATION
+            - INVALID_LAYOUT_ATTRIBUTE_PRODUCTS_PER_ROW
+            - INVALID_LAYOUT_ATTRIBUTE_BACKGROUND_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_DIVIDER_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_TEXT_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_IMAGE_STYLE
+            - TAG_NOT_FOUND
+            - INVALID_SEARCH_TERM_SIZE
+        success:
+          type: boolean
+    ApiShowroomPublicityResponseModel:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - SHOWROOM_IS_PUBLIC
+          - SHOWROOM_IS_PRIVATE
+    ApiShowroomPublicityResultResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_UUID
+            - MISSING_UUIDS
+            - MISSING_NAME
+            - MISSING_PRODUCT_UUIDS
+            - MISSING_ORGANIZATION_UUID
+            - MISSING_PAGE
+            - MISSING_SIZE
+            - MISSING_GROUP_CONTENTS
+            - MISSING_PRODUCT_UUID_IN_GROUP
+            - INVALID_PRODUCT_UUID_IN_GROUP
+            - INVALID_VARIANT_GROUP_UUID_IN_GROUP
+            - INVALID_PRODUCTS_SIZE
+            - INVALID_PASSWORD
+            - INVALID_PAGE
+            - INVALID_SIZE
+            - INCORRECT_PASSWORD
+            - INVALID_PRODUCT_UUID
+            - INVALID_VARIANT_GROUP_UUID
+            - SHOWROOM_NOT_FOUND
+            - PRODUCT_NOT_FOUND
+            - VARIANT_GROUP_NOT_FOUND
+            - DUPLICATED_PRODUCTS_UUIDS
+            - DUPLICATED_VARIANT_GROUPS_UUIDS
+            - PRODUCTS_NOT_IN_SAME_ORGANIZATION
+            - INVALID_LAYOUT_ATTRIBUTE_PRODUCTS_PER_ROW
+            - INVALID_LAYOUT_ATTRIBUTE_BACKGROUND_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_DIVIDER_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_TEXT_COLOR
+            - INVALID_LAYOUT_ATTRIBUTE_IMAGE_STYLE
+            - TAG_NOT_FOUND
+            - INVALID_SEARCH_TERM_SIZE
+        response:
+          $ref: "#/components/schemas/ApiShowroomPublicityResponseModel"
+    ApiGetProductResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_UUID
+            - MISSING_CLIENT_SLUG
+            - MISSING_ORGANIZATION_SLUG
+            - PRODUCT_NOT_FOUND
+        response:
+          $ref: "#/components/schemas/ApiGetProductResponseModel"
+    ApiGetProductResponseModel:
+      type: object
+      properties:
+        watermark:
+          type: boolean
+        uuid:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductLocationsSearchResponseModel"
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductTagsSearchResponseModel"
+        asset:
+          $ref: "#/components/schemas/ProductAssetModel"
+        attributes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductAttributeModel"
+        pipelineUuid:
+          type: string
+        created:
+          type: string
+          format: date-time
+        rendererConfigs:
+          type: string
+        viewerSettings:
+          $ref: "#/components/schemas/ViewerSettingsResponseModel"
+        embedSettings:
+          $ref: "#/components/schemas/EmbedSettingsResponseModel"
+    EmbedSettingsResponseModel:
+      type: object
+      properties:
+        config:
+          type: object
+          additionalProperties:
+            type: object
+    ProductAttributeModel:
+      type: object
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+    ViewerSettingsResponseModel:
+      type: object
+      properties:
+        value:
+          type: string
+        presetUuid:
+          type: string
+        showHotspotNumbers:
+          type: boolean
+        config:
+          type: string
+        ui:
+          type: string
+    StorageResourceTestSessionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+            enum:
+            - MISSING_ORGANIZATION_UUID
+            - MISSING_EXPIRATION
+            - MISSING_RESOURCES
+            - MISSING_PRODUCT_UUID
+            - TEST_SESSION_EXPIRED
+            - TEST_SESSION_UUID_NOT_FOUND
+            - PRODUCT_NOT_FOUND
+            - TEST_SESSION_GLB_GENERATION_ERROR
+            - TEST_SESSION_USDZ_GENERATION_ERROR
+            - TEST_SESSION_THUMBNAIL_GENERATION_ERROR
+        response:
+          $ref: "#/components/schemas/StorageResourceTestSessionResponseModel"
+    StorageResourceTestSessionResponseModel:
+      type: object
+      properties:
+        uuid:
+          type: string
+        productUuid:
+          type: string
+        organizationSlug:
+          type: string
+        clientSlug:
+          type: string
+        created:
+          type: string
+          format: date-time
+        expiration:
+          type: string
+          format: date-time
+        resources:
+          type: object
+          additionalProperties:
+            type: string
