@@ -18,6 +18,8 @@ import {
 	getClientUuid,
 	buildModelOpsParameters,
 	createProductWithAsset,
+	validateBinaryData,
+	sanitizeFileName,
 } from './GenericFunctions';
 
 import {
@@ -113,17 +115,27 @@ export class Vntana implements INodeType {
 					};
 				}
 
-				const BASE_URL = 'https://api-platform.vntana.com';
+				// Use configurable base URL or default
+				const baseUrl = credentials.baseUrl as string | undefined;
+				const apiBaseUrl = baseUrl && baseUrl.trim() ? baseUrl.trim().replace(/\/$/, '') : 'https://api-platform.vntana.com';
 
 				try {
 					// Use httpRequest instead of deprecated request
 					// Type assertion needed as ICredentialTestFunctions typing is incomplete
-					const helpers = this.helpers as unknown as { httpRequest: (options: object) => Promise<any> };
+					const helpers = this.helpers as unknown as { httpRequest?: (options: object) => Promise<any> };
+
+					// Runtime check for httpRequest availability
+					if (!helpers.httpRequest || typeof helpers.httpRequest !== 'function') {
+						return {
+							status: 'Error',
+							message: 'Unable to test credentials: httpRequest helper not available',
+						};
+					}
 
 					// Step 1: Login to get initial token
 					const loginResponse = await helpers.httpRequest({
 						method: 'POST',
-						url: `${BASE_URL}/v1/auth/login`,
+						url: `${apiBaseUrl}/v1/auth/login`,
 						headers: {
 							'Content-Type': 'application/json',
 						},
@@ -135,14 +147,14 @@ export class Vntana implements INodeType {
 					if (!loginToken) {
 						return {
 							status: 'Error',
-							message: 'Login failed: No authentication token received. Check your email and password.',
+							message: 'Authentication failed. Please verify your credentials.',
 						};
 					}
 
 					// Step 2: Refresh token with organization UUID
 					const refreshResponse = await helpers.httpRequest({
 						method: 'POST',
-						url: `${BASE_URL}/v1/auth/refresh-token`,
+						url: `${apiBaseUrl}/v1/auth/refresh-token`,
 						headers: {
 							'X-AUTH-TOKEN': `Bearer ${loginToken}`,
 							'organizationUuid': organizationUuid,
@@ -154,14 +166,14 @@ export class Vntana implements INodeType {
 					if (!refreshToken) {
 						return {
 							status: 'Error',
-							message: 'Token refresh failed: Could not get organization token. Check your organization UUID.',
+							message: 'Authentication failed. Please verify your credentials and organization UUID.',
 						};
 					}
 
 					// Step 3: Verify the token works by fetching organizations
 					const verifyResponse = await helpers.httpRequest({
 						method: 'GET',
-						url: `${BASE_URL}/v1/organizations`,
+						url: `${apiBaseUrl}/v1/organizations`,
 						headers: {
 							'X-AUTH-TOKEN': `Bearer ${refreshToken}`,
 							'Accept': 'application/json',
@@ -184,21 +196,21 @@ export class Vntana implements INodeType {
 					};
 				} catch (error) {
 					const errorMessage = (error as Error).message || 'Unknown error';
-					if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+					// Normalize error messages to prevent account enumeration
+					// Don't reveal whether it's a credential issue vs permission issue
+					if (errorMessage.includes('401') ||
+						errorMessage.includes('403') ||
+						errorMessage.includes('Unauthorized') ||
+						errorMessage.includes('Forbidden')) {
 						return {
 							status: 'Error',
-							message: 'Invalid email or password',
+							message: 'Authentication failed. Please verify your credentials and organization UUID.',
 						};
 					}
-					if (errorMessage.includes('403') || errorMessage.includes('Forbidden')) {
-						return {
-							status: 'Error',
-							message: 'Access denied. Check your organization UUID and permissions.',
-						};
-					}
+					// For other errors (network, timeout, etc.), provide generic message
 					return {
 						status: 'Error',
-						message: `Connection failed: ${errorMessage}`,
+						message: 'Connection failed. Please verify your credentials and network connectivity.',
 					};
 				}
 			},
@@ -343,8 +355,12 @@ export class Vntana implements INodeType {
 						// Get binary data
 						const binaryDataInput = this.helpers.assertBinaryData(i, binaryPropertyName);
 						const buffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
-						const fileName = binaryDataInput.fileName || 'model.glb';
+						const rawFileName = binaryDataInput.fileName || 'model.glb';
+						const fileName = sanitizeFileName(rawFileName);
 						const contentType = binaryDataInput.mimeType || 'application/octet-stream';
+
+						// Validate binary data (M-4 security fix)
+						validateBinaryData(this, buffer, fileName, contentType, 'THREE_D');
 
 						// Build optimization parameters
 						let modelOpsParameters: IDataObject;
@@ -419,8 +435,16 @@ export class Vntana implements INodeType {
 						// Get binary data
 						const binaryDataInput = this.helpers.assertBinaryData(i, binaryPropertyName);
 						const buffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
-						const fileName = binaryDataInput.fileName || 'file';
+						const rawFileName = binaryDataInput.fileName || 'file';
+						const fileName = sanitizeFileName(rawFileName);
 						const contentType = binaryDataInput.mimeType || 'application/octet-stream';
+
+						// Validate binary data (M-4 security fix)
+						// Map asset type to validation category
+						const validationCategory = assetType === 'THREE_D' ? 'THREE_D' :
+							assetType === 'IMAGE' ? 'IMAGE' :
+							assetType === 'VIDEO' ? 'VIDEO' : undefined;
+						validateBinaryData(this, buffer, fileName, contentType, validationCategory);
 
 						// Build product data
 						const productData: IDataObject = {
@@ -554,8 +578,12 @@ export class Vntana implements INodeType {
 						const binaryData = this.helpers.assertBinaryData(i, binaryPropertyName);
 						const buffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
 
-						const fileName = (options.fileName as string) || binaryData.fileName || 'upload';
+						const rawFileName = (options.fileName as string) || binaryData.fileName || 'upload';
+						const fileName = sanitizeFileName(rawFileName);
 						const contentType = (options.contentType as string) || binaryData.mimeType || 'application/octet-stream';
+
+						// Validate binary data (M-4 security fix)
+						validateBinaryData(this, buffer, fileName, contentType, 'IMAGE');
 
 						// Step 1: Get signed URL
 						const signUrlBody: IDataObject = {
@@ -614,8 +642,12 @@ export class Vntana implements INodeType {
 						const binaryData = this.helpers.assertBinaryData(i, binaryPropertyName);
 						const buffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
 
-						const fileName = (options.fileName as string) || binaryData.fileName || 'upload';
+						const rawFileName = (options.fileName as string) || binaryData.fileName || 'upload';
+						const fileName = sanitizeFileName(rawFileName);
 						const contentType = (options.contentType as string) || binaryData.mimeType || 'application/octet-stream';
+
+						// Validate binary data (M-4 security fix) - no specific category for generic attachments
+						validateBinaryData(this, buffer, fileName, contentType);
 
 						// Step 1: Get signed URL
 						const signUrlBody: IDataObject = {

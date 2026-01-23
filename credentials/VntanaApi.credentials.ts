@@ -62,5 +62,13 @@ export class VntanaApi implements ICredentialType {
 			required: false,
 			description: 'Default workspace (client) UUID to use when not specified in operations',
 		},
+		{
+			displayName: 'API Base URL',
+			name: 'baseUrl',
+			type: 'string',
+			default: '',
+			required: false,
+			description: 'Optional custom API base URL for staging/test environments. Leave empty for production (https://api-platform.vntana.com)',
+		},
 	];
 }

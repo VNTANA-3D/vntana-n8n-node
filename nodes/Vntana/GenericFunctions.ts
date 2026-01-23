@@ -10,11 +10,32 @@ import { NodeApiError } from 'n8n-workflow';
 
 import type { ModelOpsParameters, OptimizationPreset } from './types';
 
-const BASE_URL = 'https://api-platform.vntana.com';
+const DEFAULT_BASE_URL = 'https://api-platform.vntana.com';
 
-// Token cache to avoid re-authenticating on every request within the same execution
-let cachedToken: { token: string; timestamp: number } | null = null;
+// Token cache keyed by credential hash to ensure credential changes invalidate cache
+// Using a Map instead of module-level variable for better isolation
+interface TokenCacheEntry {
+	token: string;
+	timestamp: number;
+}
+const tokenCache = new Map<string, TokenCacheEntry>();
 const TOKEN_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Generate a cache key from credentials to ensure credential changes invalidate cache
+ */
+function getCredentialCacheKey(email: string, organizationUuid: string): string {
+	// Use a simple hash to create a unique key per credential set
+	return `${email}:${organizationUuid}`;
+}
+
+/**
+ * Get the base URL from credentials or use default
+ */
+function getBaseUrl(credentials: IDataObject): string {
+	const baseUrl = credentials.baseUrl as string | undefined;
+	return baseUrl && baseUrl.trim() ? baseUrl.trim().replace(/\/$/, '') : DEFAULT_BASE_URL;
+}
 
 /**
  * Authenticate with VNTANA using email/password, then refresh with organization UUID
@@ -23,20 +44,23 @@ const TOKEN_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 async function getAuthToken(
 	executeFunctions: IExecuteFunctions,
 ): Promise<string> {
-	// Check cache first
-	if (cachedToken && Date.now() - cachedToken.timestamp < TOKEN_CACHE_TTL) {
-		return cachedToken.token;
-	}
-
 	const credentials = await executeFunctions.getCredentials('vntanaApi');
 	const email = credentials.email as string;
 	const password = credentials.password as string;
 	const organizationUuid = credentials.organizationUuid as string;
+	const baseUrl = getBaseUrl(credentials);
+
+	// Check cache using credential-based key
+	const cacheKey = getCredentialCacheKey(email, organizationUuid);
+	const cachedEntry = tokenCache.get(cacheKey);
+	if (cachedEntry && Date.now() - cachedEntry.timestamp < TOKEN_CACHE_TTL) {
+		return cachedEntry.token;
+	}
 
 	// Step 1: Login to get initial token
 	const loginOptions: IHttpRequestOptions = {
 		method: 'POST',
-		url: `${BASE_URL}/v1/auth/login`,
+		url: `${baseUrl}/v1/auth/login`,
 		headers: {
 			'Content-Type': 'application/json',
 		},
@@ -53,21 +77,21 @@ async function getAuthToken(
 		loginResponse = await executeFunctions.helpers.httpRequest(loginOptions);
 	} catch (error) {
 		throw new NodeApiError(executeFunctions.getNode(), error as JsonObject, {
-			message: 'VNTANA login failed - check your email and password',
+			message: 'VNTANA authentication failed',
 		});
 	}
 
 	const loginToken = loginResponse.headers?.['x-auth-token'];
 	if (!loginToken) {
 		throw new NodeApiError(executeFunctions.getNode(), {} as JsonObject, {
-			message: 'No auth token received from VNTANA login',
+			message: 'VNTANA authentication failed',
 		});
 	}
 
 	// Step 2: Refresh token with organization UUID to get org-specific token
 	const refreshOptions: IHttpRequestOptions = {
 		method: 'POST',
-		url: `${BASE_URL}/v1/auth/refresh-token`,
+		url: `${baseUrl}/v1/auth/refresh-token`,
 		headers: {
 			'X-AUTH-TOKEN': `Bearer ${loginToken}`,
 			'organizationUuid': organizationUuid,
@@ -81,23 +105,23 @@ async function getAuthToken(
 		refreshResponse = await executeFunctions.helpers.httpRequest(refreshOptions);
 	} catch (error) {
 		throw new NodeApiError(executeFunctions.getNode(), error as JsonObject, {
-			message: 'VNTANA token refresh failed - check your organization UUID',
+			message: 'VNTANA authentication failed',
 		});
 	}
 
 	const refreshToken = refreshResponse.headers?.['x-auth-token'];
 	if (!refreshToken) {
 		throw new NodeApiError(executeFunctions.getNode(), {} as JsonObject, {
-			message: 'No refresh token received from VNTANA',
+			message: 'VNTANA authentication failed',
 		});
 	}
 
-	// Cache the token
+	// Cache the token using credential-based key
 	const bearerToken = `Bearer ${refreshToken}`;
-	cachedToken = {
+	tokenCache.set(cacheKey, {
 		token: bearerToken,
 		timestamp: Date.now(),
-	};
+	});
 
 	return bearerToken;
 }
@@ -115,10 +139,12 @@ export async function vntanaApiRequest(
 ): Promise<IDataObject> {
 	// Get auth token (handles login flow automatically)
 	const authToken = await getAuthToken(this);
+	const credentials = await this.getCredentials('vntanaApi');
+	const baseUrl = getBaseUrl(credentials);
 
 	const requestOptions: IHttpRequestOptions = {
 		method,
-		url: `${BASE_URL}${endpoint}`,
+		url: `${baseUrl}${endpoint}`,
 		headers: {
 			Accept: 'application/json',
 			'Content-Type': 'application/json',
@@ -173,10 +199,12 @@ export async function vntanaApiRequestBinary(
 ): Promise<Buffer> {
 	// Get auth token (handles login flow automatically)
 	const authToken = await getAuthToken(this);
+	const credentials = await this.getCredentials('vntanaApi');
+	const baseUrl = getBaseUrl(credentials);
 
 	const requestOptions: IHttpRequestOptions = {
 		method,
-		url: `${BASE_URL}${endpoint}`,
+		url: `${baseUrl}${endpoint}`,
 		headers: {
 			Accept: '*/*',
 			'X-AUTH-TOKEN': authToken,
@@ -243,11 +271,14 @@ export async function uploadToSignedUrl(
 	binaryData: Buffer,
 	contentType: string,
 ): Promise<void> {
+	const credentials = await this.getCredentials('vntanaApi');
+	const baseUrl = getBaseUrl(credentials);
+
 	const requestOptions: IHttpRequestOptions = {
 		method: 'POST',
 		url: signedUrl,
 		headers: {
-			'Origin': 'https://api-platform.vntana.com',
+			'Origin': baseUrl,
 			'Content-Type': contentType,
 			'Content-Length': binaryData.length.toString(),
 		},
@@ -323,10 +354,18 @@ export async function getClientUuid(
 }
 
 /**
- * Clear the cached token (useful for testing or forced re-authentication)
+ * Clear the cached token for specific credentials or all tokens
+ * Call this when credentials are updated or on authentication failure
  */
-export function clearTokenCache(): void {
-	cachedToken = null;
+export function clearTokenCache(email?: string, organizationUuid?: string): void {
+	if (email && organizationUuid) {
+		// Clear specific credential's cache
+		const cacheKey = getCredentialCacheKey(email, organizationUuid);
+		tokenCache.delete(cacheKey);
+	} else {
+		// Clear all cached tokens
+		tokenCache.clear();
+	}
 }
 
 /**
@@ -464,6 +503,137 @@ export function buildModelOpsParameters(
 
 	return params;
 }
+
+// =============================================================================
+// Binary Data Validation (Security M-4)
+// =============================================================================
+
+// Maximum file size: 500MB for 3D models (VNTANA may accept larger, but this is a reasonable limit)
+const MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024;
+
+// Allowed MIME types for different asset types
+const ALLOWED_MIME_TYPES: Record<string, string[]> = {
+	// 3D model formats
+	THREE_D: [
+		'model/gltf-binary',
+		'model/gltf+json',
+		'model/vnd.usdz+zip',
+		'application/octet-stream', // Common for binary 3D files
+		'application/zip', // For zipped models
+	],
+	// Image formats (for renders, textures)
+	IMAGE: [
+		'image/png',
+		'image/jpeg',
+		'image/webp',
+		'image/gif',
+	],
+	// Video formats
+	VIDEO: [
+		'video/mp4',
+		'video/quicktime',
+		'video/webm',
+	],
+	// Document formats (for attachments)
+	DOCUMENT: [
+		'application/pdf',
+		'application/msword',
+		'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+	],
+};
+
+// Dangerous filename patterns to reject
+const DANGEROUS_FILENAME_PATTERNS = [
+	/\.\./,           // Path traversal
+	/^\.+$/,          // Hidden/dot files
+	/[<>:"|?*]/,      // Invalid characters on Windows
+	/\x00/,           // Null bytes
+	/^\/|^\\/,        // Absolute paths
+];
+
+/**
+ * Validate binary data before upload
+ * @throws NodeApiError if validation fails
+ */
+export function validateBinaryData(
+	executeFunctions: IExecuteFunctions,
+	buffer: Buffer,
+	fileName: string,
+	contentType: string,
+	assetType?: string,
+): void {
+	// Validate file size
+	if (buffer.length > MAX_FILE_SIZE_BYTES) {
+		throw new NodeApiError(executeFunctions.getNode(), {} as JsonObject, {
+			message: `File size ${(buffer.length / 1024 / 1024).toFixed(2)}MB exceeds maximum allowed size of ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB`,
+		});
+	}
+
+	if (buffer.length === 0) {
+		throw new NodeApiError(executeFunctions.getNode(), {} as JsonObject, {
+			message: 'File is empty',
+		});
+	}
+
+	// Validate filename for path traversal and dangerous patterns
+	for (const pattern of DANGEROUS_FILENAME_PATTERNS) {
+		if (pattern.test(fileName)) {
+			throw new NodeApiError(executeFunctions.getNode(), {} as JsonObject, {
+				message: 'Invalid filename: contains disallowed characters or patterns',
+			});
+		}
+	}
+
+	// Validate MIME type if asset type is specified
+	if (assetType && ALLOWED_MIME_TYPES[assetType]) {
+		const allowedTypes = ALLOWED_MIME_TYPES[assetType];
+		if (!allowedTypes.includes(contentType)) {
+			throw new NodeApiError(executeFunctions.getNode(), {} as JsonObject, {
+				message: `Invalid content type '${contentType}' for asset type '${assetType}'. Allowed types: ${allowedTypes.join(', ')}`,
+			});
+		}
+	}
+}
+
+/**
+ * Sanitize a filename to remove potentially dangerous characters
+ * Returns a safe filename that can be used for uploads
+ */
+export function sanitizeFileName(fileName: string): string {
+	// Remove path components (keep only the filename)
+	let sanitized = fileName.replace(/^.*[\\/]/, '');
+
+	// Remove null bytes
+	sanitized = sanitized.replace(/\x00/g, '');
+
+	// Remove path traversal sequences
+	sanitized = sanitized.replace(/\.\./g, '');
+
+	// Remove characters that are invalid on Windows
+	sanitized = sanitized.replace(/[<>:"|?*]/g, '_');
+
+	// Remove leading dots (hidden files)
+	sanitized = sanitized.replace(/^\.+/, '');
+
+	// Ensure we have a valid filename
+	if (!sanitized || sanitized.length === 0) {
+		sanitized = 'unnamed_file';
+	}
+
+	// Truncate overly long filenames (max 255 characters)
+	if (sanitized.length > 255) {
+		const ext = sanitized.substring(sanitized.lastIndexOf('.'));
+		const baseName = sanitized.substring(0, sanitized.lastIndexOf('.'));
+		const maxBaseLength = 255 - ext.length;
+		sanitized = baseName.substring(0, maxBaseLength) + ext;
+	}
+
+	return sanitized;
+}
+
+// =============================================================================
+// API Request Functions
+// =============================================================================
 
 /**
  * Get signed URL for product asset upload
