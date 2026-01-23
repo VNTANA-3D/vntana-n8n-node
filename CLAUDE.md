@@ -66,6 +66,59 @@ cd ~/.n8n/custom && npm link n8n-nodes-vntana
 n8n start
 ```
 
+## Publishing to npm
+
+### Pre-publish Checklist
+
+1. **GitHub repo must be public** - n8n verifies the repo exists and checks for credential files
+2. **Run the scanner locally first:**
+   ```bash
+   npx @n8n/scan-community-package n8n-nodes-vntana@latest
+   ```
+3. **All code must use `httpRequest`** - The deprecated `this.helpers.request()` is not allowed
+
+### Publishing Steps
+
+```bash
+# 1. Build and verify
+npm run build
+
+# 2. Bump version (creates commit + tag)
+npm version patch   # or minor/major
+
+# 3. Push to GitHub with tags
+git push origin main --tags
+
+# 4. Publish to npm
+npm publish
+
+# 5. Verify with scanner (use explicit version to avoid cache)
+npx @n8n/scan-community-package n8n-nodes-vntana@<new-version>
+```
+
+### Common Issues
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| "GitHub repo appears invalid" | Repo is private | Make repo public |
+| "Can't find credential file" | Repo private or path wrong | Verify `credentials/` exists in repo |
+| "ESLint: 'request' is deprecated" | Using `this.helpers.request()` | Use `httpRequest` instead |
+| Scanner shows old version | npm cache | Specify version explicitly: `@0.1.1` |
+
+### httpRequest in Credential Tests
+
+n8n's `ICredentialTestFunctions.helpers` doesn't expose `httpRequest` in types, but it exists at runtime. Use type assertion:
+
+```typescript
+const helpers = this.helpers as unknown as { httpRequest: (options: object) => Promise<any> };
+const response = await helpers.httpRequest({
+    method: 'POST',
+    url: 'https://api.example.com/auth',
+    body: { email, password },
+    returnFullResponse: true,  // NOT resolveWithFullResponse
+});
+```
+
 ## Reference Documentation
 
 Detailed API and n8n docs are in `documentation/`:
