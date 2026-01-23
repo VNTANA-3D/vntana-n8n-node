@@ -10,6 +10,96 @@ import { NodeApiError } from 'n8n-workflow';
 
 const BASE_URL = 'https://api-platform.vntana.com';
 
+// Token cache to avoid re-authenticating on every request within the same execution
+let cachedToken: { token: string; timestamp: number } | null = null;
+const TOKEN_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Authenticate with VNTANA using email/password, then refresh with organization UUID
+ * Returns a Bearer token string ready to use in headers
+ */
+async function getAuthToken(
+	executeFunctions: IExecuteFunctions,
+): Promise<string> {
+	// Check cache first
+	if (cachedToken && Date.now() - cachedToken.timestamp < TOKEN_CACHE_TTL) {
+		return cachedToken.token;
+	}
+
+	const credentials = await executeFunctions.getCredentials('vntanaApi');
+	const email = credentials.email as string;
+	const password = credentials.password as string;
+	const organizationUuid = credentials.organizationUuid as string;
+
+	// Step 1: Login to get initial token
+	const loginOptions: IHttpRequestOptions = {
+		method: 'POST',
+		url: `${BASE_URL}/v1/auth/login`,
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: {
+			email,
+			password,
+		},
+		json: true,
+		returnFullResponse: true,
+	};
+
+	let loginResponse;
+	try {
+		loginResponse = await executeFunctions.helpers.httpRequest(loginOptions);
+	} catch (error) {
+		throw new NodeApiError(executeFunctions.getNode(), error as JsonObject, {
+			message: 'VNTANA login failed - check your email and password',
+		});
+	}
+
+	const loginToken = loginResponse.headers?.['x-auth-token'];
+	if (!loginToken) {
+		throw new NodeApiError(executeFunctions.getNode(), {} as JsonObject, {
+			message: 'No auth token received from VNTANA login',
+		});
+	}
+
+	// Step 2: Refresh token with organization UUID to get org-specific token
+	const refreshOptions: IHttpRequestOptions = {
+		method: 'POST',
+		url: `${BASE_URL}/v1/auth/refresh-token`,
+		headers: {
+			'X-AUTH-TOKEN': `Bearer ${loginToken}`,
+			'organizationUuid': organizationUuid,
+		},
+		json: true,
+		returnFullResponse: true,
+	};
+
+	let refreshResponse;
+	try {
+		refreshResponse = await executeFunctions.helpers.httpRequest(refreshOptions);
+	} catch (error) {
+		throw new NodeApiError(executeFunctions.getNode(), error as JsonObject, {
+			message: 'VNTANA token refresh failed - check your organization UUID',
+		});
+	}
+
+	const refreshToken = refreshResponse.headers?.['x-auth-token'];
+	if (!refreshToken) {
+		throw new NodeApiError(executeFunctions.getNode(), {} as JsonObject, {
+			message: 'No refresh token received from VNTANA',
+		});
+	}
+
+	// Cache the token
+	const bearerToken = `Bearer ${refreshToken}`;
+	cachedToken = {
+		token: bearerToken,
+		timestamp: Date.now(),
+	};
+
+	return bearerToken;
+}
+
 /**
  * Make an authenticated request to the VNTANA API
  */
@@ -21,12 +111,16 @@ export async function vntanaApiRequest(
 	qs: IDataObject = {},
 	options: Partial<IHttpRequestOptions> = {},
 ): Promise<IDataObject> {
+	// Get auth token (handles login flow automatically)
+	const authToken = await getAuthToken(this);
+
 	const requestOptions: IHttpRequestOptions = {
 		method,
 		url: `${BASE_URL}${endpoint}`,
 		headers: {
 			Accept: 'application/json',
 			'Content-Type': 'application/json',
+			'X-AUTH-TOKEN': authToken,
 		},
 		qs,
 		body,
@@ -50,11 +144,7 @@ export async function vntanaApiRequest(
 	}
 
 	try {
-		const response = await this.helpers.httpRequestWithAuthentication.call(
-			this,
-			'vntanaApi',
-			requestOptions,
-		);
+		const response = await this.helpers.httpRequest(requestOptions);
 
 		// VNTANA wraps responses in { success, errors, response }
 		if (response.success === false) {
@@ -79,11 +169,15 @@ export async function vntanaApiRequestBinary(
 	endpoint: string,
 	qs: IDataObject = {},
 ): Promise<Buffer> {
+	// Get auth token (handles login flow automatically)
+	const authToken = await getAuthToken(this);
+
 	const requestOptions: IHttpRequestOptions = {
 		method,
 		url: `${BASE_URL}${endpoint}`,
 		headers: {
 			Accept: '*/*',
+			'X-AUTH-TOKEN': authToken,
 		},
 		qs,
 		encoding: 'arraybuffer',
@@ -95,11 +189,7 @@ export async function vntanaApiRequestBinary(
 	}
 
 	try {
-		const response = await this.helpers.httpRequestWithAuthentication.call(
-			this,
-			'vntanaApi',
-			requestOptions,
-		);
+		const response = await this.helpers.httpRequest(requestOptions);
 		return response as Buffer;
 	} catch (error) {
 		throw new NodeApiError(this.getNode(), error as JsonObject);
@@ -228,4 +318,11 @@ export async function getClientUuid(
 	}
 
 	return defaultClientUuid;
+}
+
+/**
+ * Clear the cached token (useful for testing or forced re-authentication)
+ */
+export function clearTokenCache(): void {
+	cachedToken = null;
 }

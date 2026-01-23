@@ -1,6 +1,10 @@
 import type {
+	ICredentialDataDecryptedObject,
+	ICredentialsDecrypted,
+	ICredentialTestFunctions,
 	IDataObject,
 	IExecuteFunctions,
+	INodeCredentialTestResult,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
@@ -51,6 +55,7 @@ export class Vntana implements INodeType {
 			{
 				name: 'vntanaApi',
 				required: true,
+				testedBy: 'testVntanaCredentials',
 			},
 		],
 		properties: [
@@ -64,6 +69,120 @@ export class Vntana implements INodeType {
 			...renderUploadFields,
 			...attachmentUploadFields,
 		],
+	};
+
+	methods = {
+		credentialTest: {
+			async testVntanaCredentials(
+				this: ICredentialTestFunctions,
+				credential: ICredentialsDecrypted<ICredentialDataDecryptedObject>,
+			): Promise<INodeCredentialTestResult> {
+				const credentials = credential.data;
+				if (!credentials) {
+					return {
+						status: 'Error',
+						message: 'No credentials provided',
+					};
+				}
+
+				const email = credentials.email as string;
+				const password = credentials.password as string;
+				const organizationUuid = credentials.organizationUuid as string;
+
+				if (!email || !password || !organizationUuid) {
+					return {
+						status: 'Error',
+						message: 'Email, password, and organization UUID are required',
+					};
+				}
+
+				const BASE_URL = 'https://api-platform.vntana.com';
+
+				try {
+					// Step 1: Login to get initial token
+					const loginResponse = await this.helpers.request({
+						method: 'POST',
+						url: `${BASE_URL}/v1/auth/login`,
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({ email, password }),
+						resolveWithFullResponse: true,
+					});
+
+					const loginToken = loginResponse.headers?.['x-auth-token'];
+					if (!loginToken) {
+						return {
+							status: 'Error',
+							message: 'Login failed: No authentication token received. Check your email and password.',
+						};
+					}
+
+					// Step 2: Refresh token with organization UUID
+					const refreshResponse = await this.helpers.request({
+						method: 'POST',
+						url: `${BASE_URL}/v1/auth/refresh-token`,
+						headers: {
+							'X-AUTH-TOKEN': `Bearer ${loginToken}`,
+							'organizationUuid': organizationUuid,
+						},
+						resolveWithFullResponse: true,
+					});
+
+					const refreshToken = refreshResponse.headers?.['x-auth-token'];
+					if (!refreshToken) {
+						return {
+							status: 'Error',
+							message: 'Token refresh failed: Could not get organization token. Check your organization UUID.',
+						};
+					}
+
+					// Step 3: Verify the token works by fetching organizations
+					const verifyResponse = await this.helpers.request({
+						method: 'GET',
+						url: `${BASE_URL}/v1/organizations`,
+						headers: {
+							'X-AUTH-TOKEN': `Bearer ${refreshToken}`,
+							'Accept': 'application/json',
+						},
+						json: true,
+					});
+
+					if (verifyResponse.success === true) {
+						// Organizations endpoint returns { response: { grid: [...] } }
+						const orgs = verifyResponse.response?.grid;
+						const orgName = orgs?.[0]?.name || 'Unknown';
+						return {
+							status: 'OK',
+							message: `Successfully connected to VNTANA organization: ${orgName}`,
+						};
+					}
+
+					return {
+						status: 'Error',
+						message: 'Authentication succeeded but API verification failed',
+					};
+				} catch (error) {
+					const errorMessage = (error as Error).message || 'Unknown error';
+					if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+						return {
+							status: 'Error',
+							message: 'Invalid email or password',
+						};
+					}
+					if (errorMessage.includes('403') || errorMessage.includes('Forbidden')) {
+						return {
+							status: 'Error',
+							message: 'Access denied. Check your organization UUID and permissions.',
+						};
+					}
+					return {
+						status: 'Error',
+						message: `Connection failed: ${errorMessage}`,
+					};
+				}
+			},
+		},
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {

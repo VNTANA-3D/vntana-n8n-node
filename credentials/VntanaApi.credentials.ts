@@ -1,5 +1,4 @@
-import {
-	IAuthenticateGeneric,
+import type {
 	ICredentialTestRequest,
 	ICredentialType,
 	INodeProperties,
@@ -10,17 +9,42 @@ export class VntanaApi implements ICredentialType {
 	displayName = 'VNTANA API';
 	documentationUrl = 'https://help.vntana.com/api-documentation';
 
+	// Test credentials by attempting login
+	test: ICredentialTestRequest = {
+		request: {
+			baseURL: 'https://api-platform.vntana.com',
+			url: '/v1/auth/login',
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: {
+				email: '={{$credentials.email}}',
+				password: '={{$credentials.password}}',
+			},
+		},
+	};
+
 	properties: INodeProperties[] = [
 		{
-			displayName: 'API Token',
-			name: 'apiToken',
+			displayName: 'Email',
+			name: 'email',
+			type: 'string',
+			placeholder: 'user@example.com',
+			default: '',
+			required: true,
+			description: 'Email address for your VNTANA account',
+		},
+		{
+			displayName: 'Password',
+			name: 'password',
 			type: 'string',
 			typeOptions: {
 				password: true,
 			},
 			default: '',
 			required: true,
-			description: 'Organization-specific X-AUTH-TOKEN from VNTANA. Obtain by logging in and refreshing with your organization UUID.',
+			description: 'Password for your VNTANA account',
 		},
 		{
 			displayName: 'Organization UUID',
@@ -39,20 +63,4 @@ export class VntanaApi implements ICredentialType {
 			description: 'Default workspace (client) UUID to use when not specified in operations',
 		},
 	];
-
-	authenticate: IAuthenticateGeneric = {
-		type: 'generic',
-		properties: {
-			headers: {
-				'X-AUTH-TOKEN': '={{$credentials.apiToken}}',
-			},
-		},
-	};
-
-	test: ICredentialTestRequest = {
-		request: {
-			baseURL: 'https://api-platform.vntana.com',
-			url: '/v1/organizations/current',
-		},
-	};
 }
