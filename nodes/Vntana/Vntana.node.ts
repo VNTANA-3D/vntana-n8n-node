@@ -16,6 +16,8 @@ import {
 	vntanaApiRequestBinary,
 	uploadToSignedUrl,
 	getClientUuid,
+	buildModelOpsParameters,
+	createProductWithAsset,
 } from './GenericFunctions';
 
 import {
@@ -23,11 +25,16 @@ import {
 	productOperations,
 	productSearchFields,
 	productDownloadModelFields,
+	productUpload3DModelFields,
+	productUploadAssetFields,
 	renderOperations,
 	renderDownloadFields,
 	renderUploadFields,
 	attachmentOperations,
 	attachmentUploadFields,
+	organizationOperations,
+	workspaceOperations,
+	pipelineOperations,
 } from './VntanaDescription';
 
 import type {
@@ -35,6 +42,11 @@ import type {
 	SearchAttachmentsResponse,
 	SignedUrlResponse,
 	VntanaAttachment,
+	ListOrganizationsResponse,
+	ListWorkspacesResponse,
+	ListPipelinesResponse,
+	AssetType,
+	OptimizationPreset,
 } from './types';
 
 export class Vntana implements INodeType {
@@ -63,8 +75,13 @@ export class Vntana implements INodeType {
 			productOperations,
 			renderOperations,
 			attachmentOperations,
+			organizationOperations,
+			workspaceOperations,
+			pipelineOperations,
 			...productSearchFields,
 			...productDownloadModelFields,
+			...productUpload3DModelFields,
+			...productUploadAssetFields,
 			...renderDownloadFields,
 			...renderUploadFields,
 			...attachmentUploadFields,
@@ -311,6 +328,132 @@ export class Vntana implements INodeType {
 							},
 						});
 					}
+
+					// -------------------------------------------------------------
+					// Product: Upload 3D Model
+					// -------------------------------------------------------------
+					if (operation === 'upload3DModel') {
+						const name = this.getNodeParameter('name', i) as string;
+						const pipelineUuid = this.getNodeParameter('pipelineUuid', i) as string;
+						const clientUuid = await getClientUuid.call(this, i);
+						const binaryPropertyName = this.getNodeParameter('binaryPropertyName', i) as string;
+						const optimizationMode = this.getNodeParameter('optimizationMode', i) as 'preset' | 'advanced';
+						const additionalOptions = this.getNodeParameter('additionalOptions', i, {}) as IDataObject;
+
+						// Get binary data
+						const binaryDataInput = this.helpers.assertBinaryData(i, binaryPropertyName);
+						const buffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
+						const fileName = binaryDataInput.fileName || 'model.glb';
+						const contentType = binaryDataInput.mimeType || 'application/octet-stream';
+
+						// Build optimization parameters
+						let modelOpsParameters: IDataObject;
+						if (optimizationMode === 'preset') {
+							const preset = this.getNodeParameter('optimizationPreset', i) as OptimizationPreset;
+							modelOpsParameters = buildModelOpsParameters('preset', preset) as unknown as IDataObject;
+						} else {
+							const advancedSettings: IDataObject = {
+								enableDracoCompression: this.getNodeParameter('enableDracoCompression', i, true),
+								targetPolygonCount: this.getNodeParameter('targetPolygonCount', i, 50000),
+								forcePolygonCount: this.getNodeParameter('forcePolygonCount', i, false),
+								removeObstructedGeometry: this.getNodeParameter('removeObstructedGeometry', i, true),
+								bakeSmallFeatures: this.getNodeParameter('bakeSmallFeatures', i, true),
+								pivotPoint: this.getNodeParameter('pivotPoint', i, 'bottom-center'),
+								maxTextureResolution: this.getNodeParameter('maxTextureResolution', i, 2048),
+								textureCompressionAggression: this.getNodeParameter('textureCompressionAggression', i, 3),
+								losslessTextureCompression: this.getNodeParameter('losslessTextureCompression', i, true),
+								useKTX2Format: this.getNodeParameter('useKTX2Format', i, false),
+								bakeAmbientOcclusion: this.getNodeParameter('bakeAmbientOcclusion', i, true),
+								aoStrength: this.getNodeParameter('aoStrength', i, 1),
+								aoRadius: this.getNodeParameter('aoRadius', i, 5),
+								aoResolution: this.getNodeParameter('aoResolution', i, 1024),
+							};
+							modelOpsParameters = buildModelOpsParameters('advanced', undefined, advancedSettings) as unknown as IDataObject;
+						}
+
+						// Build product data
+						const productData: IDataObject = {
+							name,
+							clientUuid,
+							pipelineUuid,
+							assetType: 'THREE_D' as AssetType,
+							modelOpsParameters,
+						};
+
+						// Add optional fields
+						if (additionalOptions.description) {
+							productData.description = additionalOptions.description;
+						}
+						if (additionalOptions.status) {
+							productData.status = additionalOptions.status;
+						}
+						if (additionalOptions.tagsUuids) {
+							productData.tagsUuids = (additionalOptions.tagsUuids as string).split(',').map(s => s.trim());
+						}
+						if (additionalOptions.projectsUuids) {
+							productData.projectsUuids = (additionalOptions.projectsUuids as string).split(',').map(s => s.trim());
+						}
+
+						// Create product and upload asset
+						const result = await createProductWithAsset.call(
+							this,
+							productData,
+							buffer,
+							fileName,
+							contentType,
+						);
+
+						returnData.push({ json: result });
+					}
+
+					// -------------------------------------------------------------
+					// Product: Upload Asset
+					// -------------------------------------------------------------
+					if (operation === 'uploadAsset') {
+						const name = this.getNodeParameter('name', i) as string;
+						const assetType = this.getNodeParameter('assetType', i) as AssetType;
+						const clientUuid = await getClientUuid.call(this, i);
+						const binaryPropertyName = this.getNodeParameter('binaryPropertyName', i) as string;
+						const additionalOptions = this.getNodeParameter('additionalOptions', i, {}) as IDataObject;
+
+						// Get binary data
+						const binaryDataInput = this.helpers.assertBinaryData(i, binaryPropertyName);
+						const buffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
+						const fileName = binaryDataInput.fileName || 'file';
+						const contentType = binaryDataInput.mimeType || 'application/octet-stream';
+
+						// Build product data
+						const productData: IDataObject = {
+							name,
+							clientUuid,
+							assetType,
+						};
+
+						// Add optional fields
+						if (additionalOptions.description) {
+							productData.description = additionalOptions.description;
+						}
+						if (additionalOptions.status) {
+							productData.status = additionalOptions.status;
+						}
+						if (additionalOptions.tagsUuids) {
+							productData.tagsUuids = (additionalOptions.tagsUuids as string).split(',').map(s => s.trim());
+						}
+						if (additionalOptions.projectsUuids) {
+							productData.projectsUuids = (additionalOptions.projectsUuids as string).split(',').map(s => s.trim());
+						}
+
+						// Create product and upload asset
+						const result = await createProductWithAsset.call(
+							this,
+							productData,
+							buffer,
+							fileName,
+							contentType,
+						);
+
+						returnData.push({ json: result });
+					}
 				}
 
 				// =================================================================
@@ -511,6 +654,93 @@ export class Vntana implements INodeType {
 								requestUuid: signedUrlData.requestUuid,
 							},
 						});
+					}
+				}
+
+				// =================================================================
+				// ORGANIZATION RESOURCE
+				// =================================================================
+				if (resource === 'organization') {
+					// -------------------------------------------------------------
+					// Organization: List
+					// -------------------------------------------------------------
+					if (operation === 'list') {
+						const response = await vntanaApiRequest.call(
+							this,
+							'GET',
+							'/v1/organizations',
+						);
+
+						const orgResponse = response.response as ListOrganizationsResponse;
+						const organizations = orgResponse.grid || [];
+
+						for (const org of organizations) {
+							returnData.push({
+								json: {
+									uuid: org.uuid,
+									name: org.name,
+									slug: org.slug,
+								},
+							});
+						}
+					}
+				}
+
+				// =================================================================
+				// WORKSPACE RESOURCE
+				// =================================================================
+				if (resource === 'workspace') {
+					// -------------------------------------------------------------
+					// Workspace: List
+					// -------------------------------------------------------------
+					if (operation === 'list') {
+						const response = await vntanaApiRequest.call(
+							this,
+							'GET',
+							'/v1/clients/client-organizations',
+						);
+
+						const workspaceResponse = response.response as ListWorkspacesResponse;
+						const workspaces = workspaceResponse.grid || [];
+
+						for (const workspace of workspaces) {
+							returnData.push({
+								json: {
+									uuid: workspace.uuid,
+									name: workspace.name,
+									slug: workspace.slug,
+								},
+							});
+						}
+					}
+				}
+
+				// =================================================================
+				// PIPELINE RESOURCE
+				// =================================================================
+				if (resource === 'pipeline') {
+					// -------------------------------------------------------------
+					// Pipeline: List
+					// -------------------------------------------------------------
+					if (operation === 'list') {
+						const response = await vntanaApiRequest.call(
+							this,
+							'GET',
+							'/v1/pipelines',
+						);
+
+						const pipelineResponse = response.response as ListPipelinesResponse;
+						const pipelines = pipelineResponse.grid || [];
+
+						for (const pipeline of pipelines) {
+							returnData.push({
+								json: {
+									uuid: pipeline.uuid,
+									name: pipeline.name,
+									description: pipeline.description,
+								},
+							});
+						}
 					}
 				}
 			} catch (error) {

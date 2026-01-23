@@ -12,6 +12,16 @@ export type ProductStatus =
 	| 'WAITING_REVIEW';
 
 /**
+ * VNTANA Asset Types
+ */
+export type AssetType =
+	| 'THREE_D'
+	| 'IMAGE'
+	| 'VIDEO'
+	| 'DOCUMENT'
+	| 'AUDIO';
+
+/**
  * VNTANA Conversion Status
  */
 export type ConversionStatus =
@@ -156,4 +166,123 @@ export interface UploadRequestBody {
 	parentEntityType: ParentEntityType;
 	storeType: StoreType;
 	resourceSettings: ResourceSettings;
+}
+
+/**
+ * Organization
+ */
+export interface VntanaOrganization extends IDataObject {
+	uuid: string;
+	name: string;
+	slug: string;
+}
+
+/**
+ * Workspace (Client)
+ */
+export interface VntanaWorkspace extends IDataObject {
+	uuid: string;
+	name: string;
+	slug: string;
+}
+
+/**
+ * Pipeline
+ */
+export interface VntanaPipeline extends IDataObject {
+	uuid: string;
+	name: string;
+	description?: string;
+}
+
+/**
+ * Model Operations Parameters for 3D optimization
+ */
+export interface ModelOpsParameters {
+	DRACO_COMPRESSION?: {
+		enabled?: string;
+	};
+	OPTIMIZATION?: {
+		poly?: string;
+		forcePoly?: string;
+		obstructedGeometry?: string;
+		bakeSmallFeatures?: string;
+		desiredOutput?: string;
+	};
+	TEXTURE_COMPRESSION?: {
+		maxDimension?: string;
+		aggression?: string;
+		lossless?: string;
+		ktx2?: string;
+	};
+	AMBIENT_OCCLUSION?: {
+		bake?: string;
+		strength?: string;
+		radius?: string;
+		resolution?: string;
+	};
+	PIVOT_POINT?: {
+		pivot?: string;
+	};
+}
+
+/**
+ * Create Product Request Body
+ */
+export interface CreateProductBody {
+	name: string;
+	clientUuid: string;
+	pipelineUuid?: string;
+	assetType: AssetType;
+	description?: string;
+	status?: ProductStatus;
+	tagsUuids?: string[];
+	projectsUuids?: string[];
+	modelOpsParameters?: ModelOpsParameters;
+}
+
+/**
+ * Asset Signed URL Request Body
+ */
+export interface AssetSignedUrlBody {
+	clientUuid: string;
+	productUuid: string;
+	assetSettings: {
+		contentType: string;
+		originalName: string;
+		originalSize: number;
+	};
+}
+
+/**
+ * Optimization Preset Names
+ */
+export type OptimizationPreset =
+	| 'webOptimized'
+	| 'highQuality'
+	| 'mobile'
+	| 'preserveOriginal';
+
+/**
+ * List Organizations Response
+ */
+export interface ListOrganizationsResponse {
+	grid: VntanaOrganization[];
+	totalCount: number;
+}
+
+/**
+ * List Workspaces Response
+ */
+export interface ListWorkspacesResponse {
+	grid: VntanaWorkspace[];
+	totalCount: number;
+}
+
+/**
+ * List Pipelines Response
+ */
+export interface ListPipelinesResponse {
+	grid: VntanaPipeline[];
+	totalCount: number;
 }

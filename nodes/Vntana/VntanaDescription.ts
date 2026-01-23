@@ -22,6 +22,18 @@ export const resourceProperty: INodeProperties = {
 			name: 'Attachment',
 			value: 'attachment',
 		},
+		{
+			name: 'Organization',
+			value: 'organization',
+		},
+		{
+			name: 'Workspace',
+			value: 'workspace',
+		},
+		{
+			name: 'Pipeline',
+			value: 'pipeline',
+		},
 	],
 	default: 'product',
 };
@@ -52,6 +64,18 @@ export const productOperations: INodeProperties = {
 			value: 'downloadModel',
 			description: 'Download a 3D model file',
 			action: 'Download a model',
+		},
+		{
+			name: 'Upload 3D Model',
+			value: 'upload3DModel',
+			description: 'Upload and optimize a 3D model file',
+			action: 'Upload a 3D model',
+		},
+		{
+			name: 'Upload Asset',
+			value: 'uploadAsset',
+			description: 'Upload an image, video, document, or audio file',
+			action: 'Upload an asset',
 		},
 	],
 	default: 'search',
@@ -111,6 +135,81 @@ export const attachmentOperations: INodeProperties = {
 		},
 	],
 	default: 'upload',
+};
+
+// =============================================================================
+// ORGANIZATION OPERATIONS
+// =============================================================================
+
+export const organizationOperations: INodeProperties = {
+	displayName: 'Operation',
+	name: 'operation',
+	type: 'options',
+	noDataExpression: true,
+	displayOptions: {
+		show: {
+			resource: ['organization'],
+		},
+	},
+	options: [
+		{
+			name: 'List',
+			value: 'list',
+			description: 'List all organizations',
+			action: 'List organizations',
+		},
+	],
+	default: 'list',
+};
+
+// =============================================================================
+// WORKSPACE OPERATIONS
+// =============================================================================
+
+export const workspaceOperations: INodeProperties = {
+	displayName: 'Operation',
+	name: 'operation',
+	type: 'options',
+	noDataExpression: true,
+	displayOptions: {
+		show: {
+			resource: ['workspace'],
+		},
+	},
+	options: [
+		{
+			name: 'List',
+			value: 'list',
+			description: 'List all workspaces in the organization',
+			action: 'List workspaces',
+		},
+	],
+	default: 'list',
+};
+
+// =============================================================================
+// PIPELINE OPERATIONS
+// =============================================================================
+
+export const pipelineOperations: INodeProperties = {
+	displayName: 'Operation',
+	name: 'operation',
+	type: 'options',
+	noDataExpression: true,
+	displayOptions: {
+		show: {
+			resource: ['pipeline'],
+		},
+	},
+	options: [
+		{
+			name: 'List',
+			value: 'list',
+			description: 'List all available optimization pipelines',
+			action: 'List pipelines',
+		},
+	],
+	default: 'list',
 };
 
 // =============================================================================
@@ -532,3 +631,557 @@ export const attachmentUploadFields: INodeProperties[] = [
 		],
 	},
 ];
+
+// =============================================================================
+// PRODUCT: UPLOAD 3D MODEL FIELDS
+// =============================================================================
+
+export const productUpload3DModelFields: INodeProperties[] = [
+	{
+		displayName: 'Name',
+		name: 'name',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+			},
+		},
+		description: 'Name for the product',
+	},
+	{
+		displayName: 'Pipeline UUID',
+		name: 'pipelineUuid',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+			},
+		},
+		description: 'UUID of the optimization pipeline to use. Use Pipeline → List to get available pipelines.',
+	},
+	{
+		displayName: 'Workspace UUID',
+		name: 'clientUuid',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+			},
+		},
+		description: 'UUID of the workspace. Leave empty to use the default from credentials.',
+	},
+	{
+		displayName: 'Binary Property',
+		name: 'binaryPropertyName',
+		type: 'string',
+		required: true,
+		default: 'data',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+			},
+		},
+		description: 'Name of the binary property containing the 3D model file',
+	},
+	{
+		displayName: 'Optimization Mode',
+		name: 'optimizationMode',
+		type: 'options',
+		options: [
+			{
+				name: 'Preset',
+				value: 'preset',
+				description: 'Use a predefined optimization preset',
+			},
+			{
+				name: 'Advanced',
+				value: 'advanced',
+				description: 'Configure optimization settings manually',
+			},
+		],
+		default: 'preset',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+			},
+		},
+		description: 'How to configure the 3D optimization settings',
+	},
+	{
+		displayName: 'Optimization Preset',
+		name: 'optimizationPreset',
+		type: 'options',
+		options: [
+			{
+				name: 'Web Optimized (Recommended)',
+				value: 'webOptimized',
+				description: 'Balanced for web viewing - 50K polys, 2048 textures, Draco enabled',
+			},
+			{
+				name: 'High Quality',
+				value: 'highQuality',
+				description: 'Preserve detail - 100K polys, 4096 textures, no Draco',
+			},
+			{
+				name: 'Mobile',
+				value: 'mobile',
+				description: 'Aggressive optimization - 25K polys, 1024 textures',
+			},
+			{
+				name: 'Preserve Original',
+				value: 'preserveOriginal',
+				description: 'Minimal changes - convert format only',
+			},
+		],
+		default: 'webOptimized',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+				optimizationMode: ['preset'],
+			},
+		},
+		description: 'Predefined optimization configuration',
+	},
+	{
+		displayName: 'Enable Draco Compression',
+		name: 'enableDracoCompression',
+		type: 'boolean',
+		default: true,
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+				optimizationMode: ['advanced'],
+			},
+		},
+		description: 'Whether to enable Draco mesh compression for smaller file sizes',
+	},
+	{
+		displayName: 'Target Polygon Count',
+		name: 'targetPolygonCount',
+		type: 'number',
+		default: 50000,
+		typeOptions: {
+			minValue: 1000,
+			maxValue: 1000000,
+		},
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+				optimizationMode: ['advanced'],
+			},
+		},
+		description: 'Target number of polygons for the optimized model',
+	},
+	{
+		displayName: 'Force Polygon Count',
+		name: 'forcePolygonCount',
+		type: 'boolean',
+		default: false,
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+				optimizationMode: ['advanced'],
+			},
+		},
+		description: 'Whether to force the exact polygon count (may reduce quality)',
+	},
+	{
+		displayName: 'Remove Obstructed Geometry',
+		name: 'removeObstructedGeometry',
+		type: 'boolean',
+		default: true,
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+				optimizationMode: ['advanced'],
+			},
+		},
+		description: 'Whether to remove geometry that is not visible from the outside',
+	},
+	{
+		displayName: 'Bake Small Features',
+		name: 'bakeSmallFeatures',
+		type: 'boolean',
+		default: true,
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+				optimizationMode: ['advanced'],
+			},
+		},
+		description: 'Whether to bake small geometric features into normal maps',
+	},
+	{
+		displayName: 'Pivot Point',
+		name: 'pivotPoint',
+		type: 'options',
+		options: [
+			{ name: 'Bottom Center', value: 'bottom-center' },
+			{ name: 'Center', value: 'center' },
+		],
+		default: 'bottom-center',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+				optimizationMode: ['advanced'],
+			},
+		},
+		description: 'Where to position the model pivot point',
+	},
+	{
+		displayName: 'Max Texture Resolution',
+		name: 'maxTextureResolution',
+		type: 'options',
+		options: [
+			{ name: '512', value: 512 },
+			{ name: '1024', value: 1024 },
+			{ name: '2048', value: 2048 },
+			{ name: '4096', value: 4096 },
+		],
+		default: 2048,
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+				optimizationMode: ['advanced'],
+			},
+		},
+		description: 'Maximum resolution for textures',
+	},
+	{
+		displayName: 'Texture Compression Aggression',
+		name: 'textureCompressionAggression',
+		type: 'number',
+		default: 3,
+		typeOptions: {
+			minValue: 1,
+			maxValue: 10,
+		},
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+				optimizationMode: ['advanced'],
+			},
+		},
+		description: 'How aggressively to compress textures (1=minimal, 10=maximum)',
+	},
+	{
+		displayName: 'Lossless Texture Compression',
+		name: 'losslessTextureCompression',
+		type: 'boolean',
+		default: true,
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+				optimizationMode: ['advanced'],
+			},
+		},
+		description: 'Whether to use lossless texture compression',
+	},
+	{
+		displayName: 'Use KTX2 Format',
+		name: 'useKTX2Format',
+		type: 'boolean',
+		default: false,
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+				optimizationMode: ['advanced'],
+			},
+		},
+		description: 'Whether to use KTX2 texture format for better GPU performance',
+	},
+	{
+		displayName: 'Bake Ambient Occlusion',
+		name: 'bakeAmbientOcclusion',
+		type: 'boolean',
+		default: true,
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+				optimizationMode: ['advanced'],
+			},
+		},
+		description: 'Whether to bake ambient occlusion into the model',
+	},
+	{
+		displayName: 'AO Strength',
+		name: 'aoStrength',
+		type: 'number',
+		default: 1,
+		typeOptions: {
+			minValue: 0,
+			maxValue: 2,
+			numberPrecision: 1,
+		},
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+				optimizationMode: ['advanced'],
+				bakeAmbientOcclusion: [true],
+			},
+		},
+		description: 'Strength of the ambient occlusion effect',
+	},
+	{
+		displayName: 'AO Radius',
+		name: 'aoRadius',
+		type: 'number',
+		default: 5,
+		typeOptions: {
+			minValue: 1,
+			maxValue: 20,
+		},
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+				optimizationMode: ['advanced'],
+				bakeAmbientOcclusion: [true],
+			},
+		},
+		description: 'Radius of the ambient occlusion sampling',
+	},
+	{
+		displayName: 'AO Resolution',
+		name: 'aoResolution',
+		type: 'options',
+		options: [
+			{ name: '512', value: 512 },
+			{ name: '1024', value: 1024 },
+			{ name: '2048', value: 2048 },
+		],
+		default: 1024,
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+				optimizationMode: ['advanced'],
+				bakeAmbientOcclusion: [true],
+			},
+		},
+		description: 'Resolution of the ambient occlusion texture',
+	},
+	{
+		displayName: 'Additional Options',
+		name: 'additionalOptions',
+		type: 'collection',
+		placeholder: 'Add Option',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['upload3DModel'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Description',
+				name: 'description',
+				type: 'string',
+				default: '',
+				description: 'Description for the product',
+			},
+			{
+				displayName: 'Status',
+				name: 'status',
+				type: 'options',
+				options: [
+					{ name: 'Draft', value: 'DRAFT' },
+					{ name: 'Live Internal', value: 'LIVE_INTERNAL' },
+					{ name: 'Live Public', value: 'LIVE_PUBLIC' },
+				],
+				default: 'DRAFT',
+				description: 'Initial status of the product',
+			},
+			{
+				displayName: 'Tag UUIDs',
+				name: 'tagsUuids',
+				type: 'string',
+				default: '',
+				description: 'Comma-separated list of tag UUIDs to apply',
+			},
+			{
+				displayName: 'Project UUIDs',
+				name: 'projectsUuids',
+				type: 'string',
+				default: '',
+				description: 'Comma-separated list of project UUIDs to link',
+			},
+		],
+	},
+];
+
+// =============================================================================
+// PRODUCT: UPLOAD ASSET FIELDS
+// =============================================================================
+
+export const productUploadAssetFields: INodeProperties[] = [
+	{
+		displayName: 'Name',
+		name: 'name',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['uploadAsset'],
+			},
+		},
+		description: 'Name for the product',
+	},
+	{
+		displayName: 'Asset Type',
+		name: 'assetType',
+		type: 'options',
+		required: true,
+		options: [
+			{
+				name: 'Image',
+				value: 'IMAGE',
+				description: 'JPG, PNG, GIF, WebP, SVG, etc.',
+			},
+			{
+				name: 'Video',
+				value: 'VIDEO',
+				description: 'MP4, MOV, WebM, AVI, etc.',
+			},
+			{
+				name: 'Document',
+				value: 'DOCUMENT',
+				description: 'PDF, DOCX, XLSX, CSV, etc.',
+			},
+			{
+				name: 'Audio',
+				value: 'AUDIO',
+				description: 'MP3, WAV, AAC, FLAC, etc.',
+			},
+		],
+		default: 'IMAGE',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['uploadAsset'],
+			},
+		},
+		description: 'Type of asset being uploaded',
+	},
+	{
+		displayName: 'Workspace UUID',
+		name: 'clientUuid',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['uploadAsset'],
+			},
+		},
+		description: 'UUID of the workspace. Leave empty to use the default from credentials.',
+	},
+	{
+		displayName: 'Binary Property',
+		name: 'binaryPropertyName',
+		type: 'string',
+		required: true,
+		default: 'data',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['uploadAsset'],
+			},
+		},
+		description: 'Name of the binary property containing the file to upload',
+	},
+	{
+		displayName: 'Additional Options',
+		name: 'additionalOptions',
+		type: 'collection',
+		placeholder: 'Add Option',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['uploadAsset'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Description',
+				name: 'description',
+				type: 'string',
+				default: '',
+				description: 'Description for the product',
+			},
+			{
+				displayName: 'Status',
+				name: 'status',
+				type: 'options',
+				options: [
+					{ name: 'Draft', value: 'DRAFT' },
+					{ name: 'Live Internal', value: 'LIVE_INTERNAL' },
+					{ name: 'Live Public', value: 'LIVE_PUBLIC' },
+				],
+				default: 'DRAFT',
+				description: 'Initial status of the product',
+			},
+			{
+				displayName: 'Tag UUIDs',
+				name: 'tagsUuids',
+				type: 'string',
+				default: '',
+				description: 'Comma-separated list of tag UUIDs to apply',
+			},
+			{
+				displayName: 'Project UUIDs',
+				name: 'projectsUuids',
+				type: 'string',
+				default: '',
+				description: 'Comma-separated list of project UUIDs to link',
+			},
+		],
+	},
+];
+
+// =============================================================================
+// ORGANIZATION: LIST FIELDS (no additional fields needed)
+// =============================================================================
+
+export const organizationListFields: INodeProperties[] = [];
+
+// =============================================================================
+// WORKSPACE: LIST FIELDS (no additional fields needed)
+// =============================================================================
+
+export const workspaceListFields: INodeProperties[] = [];
+
+// =============================================================================
+// PIPELINE: LIST FIELDS (no additional fields needed)
+// =============================================================================
+
+export const pipelineListFields: INodeProperties[] = [];

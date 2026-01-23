@@ -8,6 +8,8 @@ import type {
 } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
 
+import type { ModelOpsParameters, OptimizationPreset } from './types';
+
 const BASE_URL = 'https://api-platform.vntana.com';
 
 // Token cache to avoid re-authenticating on every request within the same execution
@@ -325,4 +327,235 @@ export async function getClientUuid(
  */
 export function clearTokenCache(): void {
 	cachedToken = null;
+}
+
+/**
+ * Optimization presets for 3D model processing
+ */
+export const OPTIMIZATION_PRESETS: Record<OptimizationPreset, ModelOpsParameters> = {
+	webOptimized: {
+		DRACO_COMPRESSION: { enabled: 'true' },
+		OPTIMIZATION: {
+			poly: '50000',
+			obstructedGeometry: 'true',
+			bakeSmallFeatures: 'true',
+		},
+		TEXTURE_COMPRESSION: {
+			maxDimension: '2048',
+			aggression: '3',
+			lossless: 'true',
+		},
+		AMBIENT_OCCLUSION: {
+			bake: 'true',
+			strength: '1',
+			radius: '5',
+			resolution: '1024',
+		},
+		PIVOT_POINT: {
+			pivot: 'bottom-center',
+		},
+	},
+	highQuality: {
+		DRACO_COMPRESSION: { enabled: 'false' },
+		OPTIMIZATION: {
+			poly: '100000',
+			obstructedGeometry: 'false',
+			bakeSmallFeatures: 'false',
+		},
+		TEXTURE_COMPRESSION: {
+			maxDimension: '4096',
+			aggression: '1',
+			lossless: 'true',
+		},
+		AMBIENT_OCCLUSION: {
+			bake: 'false',
+		},
+		PIVOT_POINT: {
+			pivot: 'bottom-center',
+		},
+	},
+	mobile: {
+		DRACO_COMPRESSION: { enabled: 'true' },
+		OPTIMIZATION: {
+			poly: '25000',
+			obstructedGeometry: 'true',
+			bakeSmallFeatures: 'true',
+		},
+		TEXTURE_COMPRESSION: {
+			maxDimension: '1024',
+			aggression: '7',
+			lossless: 'false',
+		},
+		AMBIENT_OCCLUSION: {
+			bake: 'true',
+			strength: '1',
+			radius: '5',
+			resolution: '512',
+		},
+		PIVOT_POINT: {
+			pivot: 'bottom-center',
+		},
+	},
+	preserveOriginal: {
+		OPTIMIZATION: {
+			desiredOutput: 'AUTO',
+		},
+	},
+};
+
+/**
+ * Build modelOpsParameters from preset or advanced settings
+ */
+export function buildModelOpsParameters(
+	mode: 'preset' | 'advanced',
+	preset?: OptimizationPreset,
+	advancedSettings?: IDataObject,
+): ModelOpsParameters {
+	if (mode === 'preset' && preset) {
+		return OPTIMIZATION_PRESETS[preset] || OPTIMIZATION_PRESETS.webOptimized;
+	}
+
+	// Build from advanced settings
+	if (!advancedSettings) {
+		return OPTIMIZATION_PRESETS.webOptimized;
+	}
+
+	const params: ModelOpsParameters = {};
+
+	// Draco compression
+	params.DRACO_COMPRESSION = {
+		enabled: advancedSettings.enableDracoCompression ? 'true' : 'false',
+	};
+
+	// Optimization settings
+	params.OPTIMIZATION = {
+		poly: String(advancedSettings.targetPolygonCount || 50000),
+		forcePoly: advancedSettings.forcePolygonCount ? 'true' : 'false',
+		obstructedGeometry: advancedSettings.removeObstructedGeometry ? 'true' : 'false',
+		bakeSmallFeatures: advancedSettings.bakeSmallFeatures ? 'true' : 'false',
+	};
+
+	// Texture compression
+	params.TEXTURE_COMPRESSION = {
+		maxDimension: String(advancedSettings.maxTextureResolution || 2048),
+		aggression: String(advancedSettings.textureCompressionAggression || 3),
+		lossless: advancedSettings.losslessTextureCompression ? 'true' : 'false',
+		ktx2: advancedSettings.useKTX2Format ? 'true' : 'false',
+	};
+
+	// Ambient occlusion
+	if (advancedSettings.bakeAmbientOcclusion) {
+		params.AMBIENT_OCCLUSION = {
+			bake: 'true',
+			strength: String(advancedSettings.aoStrength || 1),
+			radius: String(advancedSettings.aoRadius || 5),
+			resolution: String(advancedSettings.aoResolution || 1024),
+		};
+	} else {
+		params.AMBIENT_OCCLUSION = {
+			bake: 'false',
+		};
+	}
+
+	// Pivot point
+	params.PIVOT_POINT = {
+		pivot: (advancedSettings.pivotPoint as string) || 'bottom-center',
+	};
+
+	return params;
+}
+
+/**
+ * Get signed URL for product asset upload
+ */
+export async function getAssetUploadSignedUrl(
+	this: IExecuteFunctions,
+	clientUuid: string,
+	productUuid: string,
+	fileName: string,
+	fileSize: number,
+	contentType: string,
+): Promise<{ signedUrl: string; blobId: string; requestUuid: string }> {
+	const body: IDataObject = {
+		clientUuid,
+		productUuid,
+		assetSettings: {
+			contentType,
+			originalName: fileName,
+			originalSize: fileSize,
+		},
+	};
+
+	const response = await vntanaApiRequest.call(
+		this,
+		'POST',
+		'/v1/storage/upload/clients/products/asset/sign-url',
+		body,
+	);
+
+	const signedUrlData = response.response as IDataObject;
+	return {
+		signedUrl: signedUrlData.location as string,
+		blobId: signedUrlData.blobId as string,
+		requestUuid: signedUrlData.requestUuid as string,
+	};
+}
+
+/**
+ * Create a product with an asset file (complete upload flow)
+ * 1. Create product container via POST /v1/products
+ * 2. Get signed upload URL
+ * 3. Upload file to signed URL
+ * 4. Return product details
+ */
+export async function createProductWithAsset(
+	this: IExecuteFunctions,
+	productData: IDataObject,
+	binaryData: Buffer,
+	fileName: string,
+	contentType: string,
+): Promise<IDataObject> {
+	// Step 1: Create product container
+	const createResponse = await vntanaApiRequest.call(
+		this,
+		'POST',
+		'/v1/products',
+		productData,
+	);
+
+	const product = createResponse.response as IDataObject;
+	const productUuid = product.uuid as string;
+	const clientUuid = productData.clientUuid as string;
+
+	// Step 2: Get signed URL for asset upload
+	const { signedUrl, blobId, requestUuid } = await getAssetUploadSignedUrl.call(
+		this,
+		clientUuid,
+		productUuid,
+		fileName,
+		binaryData.length,
+		contentType,
+	);
+
+	// Step 3: Upload file to signed URL
+	await uploadToSignedUrl.call(this, signedUrl, binaryData, contentType);
+
+	// Return combined result
+	return {
+		success: true,
+		product: {
+			uuid: productUuid,
+			name: productData.name,
+			assetType: productData.assetType,
+			status: productData.status || 'DRAFT',
+			conversionStatus: 'PENDING',
+		},
+		upload: {
+			fileName,
+			fileSize: binaryData.length,
+			contentType,
+			blobId,
+			requestUuid,
+		},
+	};
 }
