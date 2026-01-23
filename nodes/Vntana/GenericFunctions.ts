@@ -508,8 +508,8 @@ export function buildModelOpsParameters(
 // Binary Data Validation (Security M-4)
 // =============================================================================
 
-// Maximum file size: 500MB for 3D models (VNTANA may accept larger, but this is a reasonable limit)
-const MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024;
+// Maximum file size: 30GB (VNTANA platform limit)
+const MAX_FILE_SIZE_BYTES = 30 * 1024 * 1024 * 1024;
 
 // Allowed MIME types for different asset types
 const ALLOWED_MIME_TYPES: Record<string, string[]> = {
