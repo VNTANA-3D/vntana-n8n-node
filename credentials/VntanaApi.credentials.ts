@@ -44,7 +44,7 @@ export class VntanaApi implements ICredentialType {
 		type: 'generic',
 		properties: {
 			headers: {
-				'X-AUTH-TOKEN': '={"Bearer " + $credentials.apiToken}',
+				'X-AUTH-TOKEN': '={{$credentials.apiToken}}',
 			},
 		},
 	};
