@@ -450,9 +450,20 @@ Content-Type: application/json
 ```
 
 ### Authentication Flow
-1. Call `POST /v1/auth/login` with credentials to get access token
-2. Call `POST /v1/auth/refresh-token` with organization UUID to get organization-specific token
-3. Use the organization token in `X-AUTH-TOKEN` header for subsequent requests
+
+**Two login methods available:**
+
+| Method | Endpoint | Request Body | Best For |
+|--------|----------|--------------|----------|
+| Email/Password | `POST /v1/auth/login` | `{"email": "...", "password": "..."}` | Interactive use, testing |
+| Personal Access Token | `POST /v1/auth/login/token` | `{"personal-access-token": "..."}` | Automation (recommended) |
+
+**Full flow:**
+1. Login using one of the methods above to get initial `x-auth-token` (returned in response headers)
+2. Call `POST /v1/auth/refresh-token` with `organizationUuid` header to get organization-specific token
+3. Use the organization token in `X-AUTH-TOKEN: Bearer <token>` header for subsequent requests
+
+> **Note:** Personal Access Tokens are called "Authentication Keys" in the Platform UI. Generate them from Profile → Authentication Key.
 
 ### Product Statuses
 - `DRAFT` - Initial status, not published

@@ -17,3 +17,12 @@ npm-debug.log*
 # Temporary files
 *.tmp
 .cache/
+
+# Environment files
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/

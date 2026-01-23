@@ -105,10 +105,10 @@ Some endpoints may return this error if:
 ## Code Example: Full Authentication Flow
 
 ```bash
-# Step 1: Login (get initial x-auth-token)
-X_AUTH_TOKEN=$(curl -sS -X POST "https://api-platform.vntana.com/v1/auth/login" \
+# Step 1: Login with personal access token (get initial x-auth-token)
+X_AUTH_TOKEN=$(curl -sS -X POST "https://api-platform.vntana.com/v1/auth/login/token" \
   -H "Content-Type: application/json" \
-  -d '{"authenticationKey": "your-key"}' \
+  -d '{"personal-access-token": "your-key"}' \
   -D - -o /dev/null | grep -i x-auth-token | cut -d' ' -f2 | tr -d '\r')
 
 # Step 2: Get Organization UUID

@@ -38,16 +38,18 @@ The first time you visit this tab, you will see a **Generate** button. Click it 
 
 Once generated, use the key to authenticate API requests instead of email/password.
 
+> **Terminology Note:** The VNTANA Platform UI calls this an "Authentication Key", but the API expects it as `personal-access-token` in the request body.
+
 ### API Login with Auth Key
 
-**Endpoint:** `POST /v1/auth/login`
+**Endpoint:** `POST /v1/auth/login/token`
 
 **Headers:** `Content-Type: application/json`
 
 **Request Body:**
 ```json
 {
-  "authenticationKey": "your-authentication-key-here"
+  "personal-access-token": "your-authentication-key-here"
 }
 ```
 
@@ -67,10 +69,10 @@ The `x-auth-token` is returned in the **Response Headers** for use in subsequent
 ## Code Examples
 
 ```bash
-# Login with authentication key
-curl -X POST "https://api-platform.vntana.com/v1/auth/login" \
+# Login with authentication key (personal access token)
+curl -X POST "https://api-platform.vntana.com/v1/auth/login/token" \
   -H "Content-Type: application/json" \
-  -d '{"authenticationKey": "your-auth-key-here"}' \
+  -d '{"personal-access-token": "your-auth-key-here"}' \
   -D - # Output headers to see x-auth-token
 ```
 
@@ -97,7 +99,7 @@ curl -X POST "https://api-platform.vntana.com/v1/auth/login" \
 | Error | Cause | Solution |
 |-------|-------|----------|
 | `401 Unauthorized` | Invalid or expired authentication key | Regenerate your key on the Platform |
-| `400 Bad Request` | Malformed request body | Ensure JSON is valid and `authenticationKey` field is present |
+| `400 Bad Request` | Malformed request body | Ensure JSON is valid and `personal-access-token` field is present |
 
 ## Related
 

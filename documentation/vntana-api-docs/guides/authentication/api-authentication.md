@@ -194,6 +194,13 @@ curl -X GET "https://api-platform.vntana.com/v1/products" \
 | **Revocation** | Generating a new refresh token with the same credentials immediately revokes the previous one |
 | **Usage** | Pass to any endpoint as the `x-auth-token` Request Header |
 
+**Important Token Behavior:**
+- When you generate a new authentication key on the Platform, any previous key is immediately invalidated
+- When you call `/v1/auth/refresh-token`, any previous refresh token for that org/workspace is immediately revoked
+- Plan accordingly for multi-instance deployments where token sharing may be required
+
+**Best Practice - Cache UUIDs:** Organization and Workspace UUIDs do not change. Store them locally after first retrieval to skip Steps 2 and 4 on subsequent authentications, reducing API calls and latency.
+
 ## Logging Out
 
 To invalidate/revoke a refresh token before the 30-day expiry:
@@ -304,6 +311,52 @@ A Postman collection is available to test Authentication endpoints. Set global v
 | `401 Unauthorized` | Invalid credentials or token | Check email/password or authentication key |
 | `403 Forbidden` | Token expired or revoked | Re-authenticate to get a new token |
 | `404 Not Found` | Endpoint not found | Verify the API base URL and endpoint path |
+
+## Official Example Repositories
+
+VNTANA provides official example code demonstrating authentication and common API workflows:
+
+### vntana-api-examples (Public)
+
+**Repository:** [https://github.com/VNTANA-3D/vntana-api-examples](https://github.com/VNTANA-3D/vntana-api-examples)
+
+Simple Python examples for file upload/download workflows. Uses a `config.json` pattern for credential management:
+
+```json
+{
+  "organizationUuid": "your-org-uuid",
+  "clientUuid": "your-workspace-uuid",
+  "token": "your-personal-access-token"
+}
+```
+
+This approach keeps credentials out of code and makes it easy to switch between environments.
+
+### Production Pattern: Session-Based Client
+
+For production integrations, consider a class-based API controller pattern with session pooling:
+
+```python
+import requests
+
+class VntanaApiClient:
+    def __init__(self, base_url="https://api-platform.vntana.com"):
+        self.base_url = base_url
+        self.session = requests.Session()  # Connection pooling
+        self.auth_token = None
+
+    def login_with_token(self, personal_access_token):
+        """Login using personal access token (authentication key)."""
+        response = self.session.post(
+            f"{self.base_url}/v1/auth/login/token",
+            json={"personal-access-token": personal_access_token}
+        )
+        # Token returned in headers
+        self.auth_token = response.headers.get("x-auth-token")
+        # Always use Bearer prefix
+        self.session.headers["x-auth-token"] = f"Bearer {self.auth_token}"
+        return response.json()
+```
 
 ## Related
 

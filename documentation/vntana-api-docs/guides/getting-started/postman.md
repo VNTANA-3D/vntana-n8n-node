@@ -22,9 +22,11 @@ Navigate to the **Pre-request Script** tab of the Collection. Check what variabl
 
 **Common variables to set:**
 - `email` - Your VNTANA account email
-- `password` - Your VNTANA account password (or use `authenticationKey`)
+- `password` - Your VNTANA account password (or use `personal-access-token` for token auth)
 - `organizationSlug` - Your Organization slug
 - `clientSlug` - Your Workspace slug
+
+> **Note:** The Platform UI calls it "Authentication Key" but the API field is `personal-access-token`.
 
 **Note:** Variables can also be set in the **Variables** tab if preferred. Not all variables are needed for every collection.
 
@@ -91,7 +93,7 @@ See [User Management](../organizations/user-management.md) for more information 
 | Issue | Solution |
 |-------|----------|
 | Collection won't run | Check that Global Variables are set, especially `url` |
-| Authentication fails | Verify email/password or authenticationKey is correct |
+| Authentication fails | Verify email/password or personal-access-token is correct |
 | 403 FORBIDDEN | Check user access level; may need Workspace-specific token |
 | File upload fails | Ensure file is passed as binary, not form-data; check Postman file access settings |
 | Missing response data | Run endpoint individually to see full response |
