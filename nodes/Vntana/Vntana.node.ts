@@ -86,26 +86,35 @@ export class Vntana implements INodeType {
 						const returnAll = this.getNodeParameter('returnAll', i) as boolean;
 						const limit = this.getNodeParameter('limit', i, 10) as number;
 						const filters = this.getNodeParameter('filters', i, {}) as IDataObject;
+						const credentials = await this.getCredentials('vntanaApi');
+						const organizationUuid = credentials.organizationUuid as string;
 
+						// Query params for endpoint URL
 						const qs: IDataObject = {
 							clientUuid,
 						};
 
-						// Add filters to query string
+						// Build request body (VNTANA search uses POST with body params)
+						const body: IDataObject = {
+							organizationUuid,
+							sorts: { UPDATED: 'DESC' },
+						};
+
+						// Add filters to body
 						if (filters.searchTerm) {
-							qs.searchTerm = filters.searchTerm;
+							body.searchTerm = filters.searchTerm;
 						}
 						if (filters.status && (filters.status as string[]).length > 0) {
-							qs.status = (filters.status as string[]).join(',');
+							body.status = filters.status;
 						}
 						if (filters.conversionStatuses && (filters.conversionStatuses as string[]).length > 0) {
-							qs.conversionStatuses = (filters.conversionStatuses as string[]).join(',');
+							body.conversionStatuses = filters.conversionStatuses;
 						}
 						if (filters.name) {
-							qs.name = filters.name;
+							body.name = filters.name;
 						}
 						if (filters.tagsUuids) {
-							qs.tagsUuids = filters.tagsUuids;
+							body.tagsUuids = (filters.tagsUuids as string).split(',').map(s => s.trim());
 						}
 
 						let products: IDataObject[];
@@ -115,17 +124,18 @@ export class Vntana implements INodeType {
 								this,
 								'POST',
 								'/v1/products/clients/search',
-								{},
+								body,
 								qs,
 							);
 						} else {
-							qs.page = 0;
-							qs.size = limit;
+							// VNTANA uses 1-based pagination
+							body.page = 1;
+							body.size = limit;
 							const response = await vntanaApiRequest.call(
 								this,
 								'POST',
 								'/v1/products/clients/search',
-								{},
+								body,
 								qs,
 							);
 							const searchResponse = response.response as SearchProductsResponse;
@@ -195,9 +205,9 @@ export class Vntana implements INodeType {
 						const downloadAll = this.getNodeParameter('downloadAll', i) as boolean;
 						const binaryPropertyName = this.getNodeParameter('binaryPropertyName', i, 'data') as string;
 
-						// Step 1: Search for attachments
+						// Step 1: Search for attachments (VNTANA uses 1-based pagination)
 						const searchBody: IDataObject = {
-							page: 0,
+							page: 1,
 							size: downloadAll ? 100 : 1,
 							productUuid,
 							sortDirection: 'ASC',

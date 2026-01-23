@@ -21,6 +21,8 @@ npm-debug.log*
 # Environment
 .env
 .env.local
+config.json
+vntana-api-examples/config.json
 
 # Test coverage
 coverage/

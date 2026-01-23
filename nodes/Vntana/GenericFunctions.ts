@@ -117,13 +117,15 @@ export async function vntanaApiRequestAllItems(
 	qs: IDataObject = {},
 ): Promise<IDataObject[]> {
 	const returnData: IDataObject[] = [];
-	let page = 0;
+	// VNTANA uses 1-based pagination
+	let page = 1;
 	const size = 50;
 	let hasMore = true;
 
 	while (hasMore) {
-		const queryParams = { ...qs, page, size };
-		const response = await vntanaApiRequest.call(this, method, endpoint, body, queryParams);
+		// For POST endpoints, pagination params go in body
+		const requestBody = { ...body, page, size };
+		const response = await vntanaApiRequest.call(this, method, endpoint, requestBody, qs);
 
 		const items = (response.response as IDataObject)?.grid as IDataObject[];
 		if (items && items.length > 0) {
