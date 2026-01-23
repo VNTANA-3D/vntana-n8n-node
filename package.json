@@ -10,14 +10,14 @@
 		"content-management"
 	],
 	"license": "MIT",
-	"homepage": "https://github.com/VNTANA/n8n-nodes-vntana",
+	"homepage": "https://github.com/VNTANA-3D/vntana-n8n-node",
 	"author": {
 		"name": "VNTANA",
 		"email": "support@vntana.com"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/VNTANA/n8n-nodes-vntana.git"
+		"url": "git+https://github.com/VNTANA-3D/vntana-n8n-node.git"
 	},
 	"main": "index.js",
 	"scripts": {
