@@ -22,7 +22,9 @@ npm-debug.log*
 .env
 .env.local
 config.json
-vntana-api-examples/config.json
+
+# API examples (separate repo with credentials)
+vntana-api-examples/
 
 # Test coverage
 coverage/
