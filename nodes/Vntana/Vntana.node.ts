@@ -99,15 +99,19 @@ export class Vntana implements INodeType {
 				const BASE_URL = 'https://api-platform.vntana.com';
 
 				try {
+					// Use httpRequest instead of deprecated request
+					// Type assertion needed as ICredentialTestFunctions typing is incomplete
+					const helpers = this.helpers as unknown as { httpRequest: (options: object) => Promise<any> };
+
 					// Step 1: Login to get initial token
-					const loginResponse = await this.helpers.request({
+					const loginResponse = await helpers.httpRequest({
 						method: 'POST',
 						url: `${BASE_URL}/v1/auth/login`,
 						headers: {
 							'Content-Type': 'application/json',
 						},
-						body: JSON.stringify({ email, password }),
-						resolveWithFullResponse: true,
+						body: { email, password },
+						returnFullResponse: true,
 					});
 
 					const loginToken = loginResponse.headers?.['x-auth-token'];
@@ -119,14 +123,14 @@ export class Vntana implements INodeType {
 					}
 
 					// Step 2: Refresh token with organization UUID
-					const refreshResponse = await this.helpers.request({
+					const refreshResponse = await helpers.httpRequest({
 						method: 'POST',
 						url: `${BASE_URL}/v1/auth/refresh-token`,
 						headers: {
 							'X-AUTH-TOKEN': `Bearer ${loginToken}`,
 							'organizationUuid': organizationUuid,
 						},
-						resolveWithFullResponse: true,
+						returnFullResponse: true,
 					});
 
 					const refreshToken = refreshResponse.headers?.['x-auth-token'];
@@ -138,14 +142,13 @@ export class Vntana implements INodeType {
 					}
 
 					// Step 3: Verify the token works by fetching organizations
-					const verifyResponse = await this.helpers.request({
+					const verifyResponse = await helpers.httpRequest({
 						method: 'GET',
 						url: `${BASE_URL}/v1/organizations`,
 						headers: {
 							'X-AUTH-TOKEN': `Bearer ${refreshToken}`,
 							'Accept': 'application/json',
 						},
-						json: true,
 					});
 
 					if (verifyResponse.success === true) {
