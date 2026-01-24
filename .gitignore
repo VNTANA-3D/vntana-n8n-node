@@ -29,6 +29,10 @@ vntana-api-examples/
 # Test coverage
 coverage/
 
+# Test environment
+.env.test
+test-results.xml
+
 # Temporary files
 *.tmp
 *.temp

@@ -762,7 +762,7 @@ export class Vntana implements INodeType {
 						);
 
 						const pipelineResponse = response.response as ListPipelinesResponse;
-						const pipelines = pipelineResponse.grid || [];
+						const pipelines = pipelineResponse.pipelines || [];
 
 						for (const pipeline of pipelines) {
 							returnData.push({

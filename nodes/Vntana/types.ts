@@ -283,6 +283,5 @@ export interface ListWorkspacesResponse {
  * List Pipelines Response
  */
 export interface ListPipelinesResponse {
-	grid: VntanaPipeline[];
-	totalCount: number;
+	pipelines: VntanaPipeline[];
 }

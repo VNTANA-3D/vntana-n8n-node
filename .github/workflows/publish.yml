@@ -6,8 +6,20 @@ on:
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
+  # Run CI tests first
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  # Run E2E tests (requires staging environment)
+  e2e:
+    uses: ./.github/workflows/e2e.yml
+    secrets: inherit
+
+  # Publish only after all tests pass
   publish:
+    name: Publish
     runs-on: ubuntu-latest
+    needs: [ci, e2e]
     permissions:
       contents: read
       id-token: write  # Required for OIDC trusted publishing
@@ -27,3 +39,5 @@ jobs:
 
       - name: Publish to npm
         run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

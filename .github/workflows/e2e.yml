@@ -1,0 +1,65 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run daily at 6:00 AM UTC
+    - cron: '0 6 * * *'
+  workflow_call:  # Allow this workflow to be called by other workflows
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate test fixtures
+        run: npx ts-node tests/fixtures/binary/generateFixtures.ts
+
+      - name: Create .env.test file
+        env:
+          VNTANA_TEST_EMAIL: ${{ secrets.VNTANA_TEST_EMAIL }}
+          VNTANA_TEST_PASSWORD: ${{ secrets.VNTANA_TEST_PASSWORD }}
+          VNTANA_TEST_ORG_UUID: ${{ secrets.VNTANA_TEST_ORG_UUID }}
+          VNTANA_TEST_WORKSPACE_UUID: ${{ secrets.VNTANA_TEST_WORKSPACE_UUID }}
+          VNTANA_TEST_PIPELINE_UUID: ${{ secrets.VNTANA_TEST_PIPELINE_UUID }}
+          VNTANA_API_BASE_URL: ${{ vars.VNTANA_API_BASE_URL }}
+        run: |
+          cat > .env.test << 'ENVEOF'
+          VNTANA_TEST_EMAIL=${VNTANA_TEST_EMAIL}
+          VNTANA_TEST_PASSWORD=${VNTANA_TEST_PASSWORD}
+          VNTANA_TEST_ORG_UUID=${VNTANA_TEST_ORG_UUID}
+          VNTANA_TEST_WORKSPACE_UUID=${VNTANA_TEST_WORKSPACE_UUID}
+          VNTANA_TEST_PIPELINE_UUID=${VNTANA_TEST_PIPELINE_UUID}
+          VNTANA_API_BASE_URL=${VNTANA_API_BASE_URL}
+          ENVEOF
+          # Replace shell variables with actual values
+          envsubst < .env.test > .env.test.tmp && mv .env.test.tmp .env.test
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        timeout-minutes: 10
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-test-report
+          path: |
+            test-results.xml
+          retention-days: 7

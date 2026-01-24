@@ -32,7 +32,7 @@ function getCredentialCacheKey(email: string, organizationUuid: string): string 
 /**
  * Get the base URL from credentials or use default
  */
-function getBaseUrl(credentials: IDataObject): string {
+export function getBaseUrl(credentials: IDataObject): string {
 	const baseUrl = credentials.baseUrl as string | undefined;
 	return baseUrl && baseUrl.trim() ? baseUrl.trim().replace(/\/$/, '') : DEFAULT_BASE_URL;
 }
@@ -547,6 +547,7 @@ const DANGEROUS_FILENAME_PATTERNS = [
 	/\.\./,           // Path traversal
 	/^\.+$/,          // Hidden/dot files
 	/[<>:"|?*]/,      // Invalid characters on Windows
+	// eslint-disable-next-line no-control-regex
 	/\x00/,           // Null bytes
 	/^\/|^\\/,        // Absolute paths
 ];
@@ -604,6 +605,7 @@ export function sanitizeFileName(fileName: string): string {
 	let sanitized = fileName.replace(/^.*[\\/]/, '');
 
 	// Remove null bytes
+	// eslint-disable-next-line no-control-regex
 	sanitized = sanitized.replace(/\x00/g, '');
 
 	// Remove path traversal sequences
