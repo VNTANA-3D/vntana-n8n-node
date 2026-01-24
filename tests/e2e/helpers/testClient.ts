@@ -268,6 +268,15 @@ export class VntanaTestClient {
 			name: productData.name,
 			clientUuid: this.config.workspaceUuid,
 			assetType: productData.assetType,
+			tags: [],
+			attributes: {},
+			autoPublish: false,
+			publishToStatus: 'DRAFT',
+			rendererConfigs: null,
+			tagsUuids: [],
+			deleteAsset: false,
+			projectsUuids: [],
+			viewerSettings: { presetUuid: null },
 		};
 
 		if (productData.description) {
@@ -276,8 +285,37 @@ export class VntanaTestClient {
 		if (productData.status) {
 			body.status = productData.status;
 		}
-		if (this.config.pipelineUuid && productData.assetType === 'THREE_D') {
-			body.pipelineUuid = this.config.pipelineUuid;
+		if (productData.assetType === 'THREE_D') {
+			if (this.config.pipelineUuid) {
+				body.pipelineUuid = this.config.pipelineUuid;
+			}
+			// Add modelOpsParameters for 3D products (required by VNTANA API)
+			body.modelOpsParameters = {
+				OPTIMIZATION: {
+					desiredOutput: 'AUTO',
+					obstructedGeometry: false,
+					bakeSmallFeatures: false,
+					poly: 150000,
+					forcePolygonCount: false,
+					freezeTransforms: false,
+				},
+				TEXTURE_COMPRESSION: {
+					useKTX: 'true',
+					bakeAmbientOcclusion: 'false',
+					ambientOcclusionStrength: 0.5,
+					ambientOcclusionRadius: 1.0,
+					ambientOcclusionResolution: '1024',
+					maxDimension: '4096',
+					aggression: '2',
+					lossless: 'false',
+				},
+				PIVOT_POINT_ALIGNMENT: {
+					pivotPoint: 'center',
+				},
+			};
+		} else {
+			// For non-3D products (IMAGE, VIDEO, etc.), use empty modelOpsParameters
+			body.modelOpsParameters = {};
 		}
 
 		return this.request('POST', '/v1/products', { body });
