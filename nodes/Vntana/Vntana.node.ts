@@ -16,6 +16,7 @@ import {
 	vntanaApiRequestBinary,
 	uploadToSignedUrl,
 	getClientUuid,
+	getBaseUrl,
 	buildModelOpsParameters,
 	createProductWithAsset,
 	validateBinaryData,
@@ -598,11 +599,16 @@ export class Vntana implements INodeType {
 							},
 						};
 
+						const credentials = await this.getCredentials('vntanaApi');
+						const baseUrl = getBaseUrl(credentials);
+
 						const signUrlResponse = await vntanaApiRequest.call(
 							this,
 							'POST',
 							'/v1/storage/upload/clients/resource/sign-url',
 							signUrlBody,
+							{},
+							{ headers: { Origin: baseUrl } },
 						);
 
 						const signedUrlData = signUrlResponse.response as SignedUrlResponse;
@@ -662,11 +668,16 @@ export class Vntana implements INodeType {
 							},
 						};
 
+						const credentials = await this.getCredentials('vntanaApi');
+						const baseUrl = getBaseUrl(credentials);
+
 						const signUrlResponse = await vntanaApiRequest.call(
 							this,
 							'POST',
 							'/v1/storage/upload/clients/resource/sign-url',
 							signUrlBody,
+							{},
+							{ headers: { Origin: baseUrl } },
 						);
 
 						const signedUrlData = signUrlResponse.response as SignedUrlResponse;

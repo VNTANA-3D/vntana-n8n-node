@@ -101,6 +101,7 @@ export class VntanaTestClient {
 		options: {
 			body?: object;
 			queryParams?: Record<string, string>;
+			headers?: Record<string, string>;
 		} = {},
 	): Promise<ApiResponse<T>> {
 		const token = await this.getAuthToken();
@@ -117,6 +118,7 @@ export class VntanaTestClient {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json',
 				'X-AUTH-TOKEN': token,
+				...options.headers,
 			},
 		};
 
@@ -183,7 +185,7 @@ export class VntanaTestClient {
 		contentType: string,
 	): Promise<void> {
 		const response = await fetch(signedUrl, {
-			method: 'POST',
+			method: 'PUT',
 			headers: {
 				'Origin': this.config.baseUrl,
 				'Content-Type': contentType,
@@ -283,28 +285,43 @@ export class VntanaTestClient {
 
 	/**
 	 * Get signed URL for asset upload
+	 * @param productUuid - Product UUID
+	 * @param fileName - File name
+	 * @param fileSize - File size in bytes
+	 * @param contentType - MIME type
+	 * @param clientUuid - Optional workspace UUID (defaults to config)
 	 */
 	async getAssetUploadSignedUrl(
 		productUuid: string,
 		fileName: string,
 		fileSize: number,
 		contentType: string,
+		clientUuid?: string,
 	): Promise<ApiResponse> {
 		return this.request('POST', '/v1/storage/upload/clients/products/asset/sign-url', {
 			body: {
-				clientUuid: this.config.workspaceUuid,
+				clientUuid: clientUuid || this.config.workspaceUuid,
 				productUuid,
-				assetSettings: {
+				resourceSettings: {
 					contentType,
 					originalName: fileName,
 					originalSize: fileSize,
 				},
+			},
+			headers: {
+				Origin: this.config.baseUrl,
 			},
 		});
 	}
 
 	/**
 	 * Get signed URL for render/attachment upload
+	 * @param productUuid - Parent product UUID
+	 * @param fileName - File name
+	 * @param fileSize - File size in bytes
+	 * @param contentType - MIME type
+	 * @param storeType - RENDER or ATTACHMENT
+	 * @param clientUuid - Optional workspace UUID (defaults to config)
 	 */
 	async getResourceUploadSignedUrl(
 		productUuid: string,
@@ -312,10 +329,11 @@ export class VntanaTestClient {
 		fileSize: number,
 		contentType: string,
 		storeType: 'RENDER' | 'ATTACHMENT',
+		clientUuid?: string,
 	): Promise<ApiResponse> {
 		return this.request('POST', '/v1/storage/upload/clients/resource/sign-url', {
 			body: {
-				clientUuid: this.config.workspaceUuid,
+				clientUuid: clientUuid || this.config.workspaceUuid,
 				parentEntityUuid: productUuid,
 				parentEntityType: 'PRODUCT',
 				storeType,
@@ -324,6 +342,9 @@ export class VntanaTestClient {
 					originalName: fileName,
 					originalSize: fileSize,
 				},
+			},
+			headers: {
+				Origin: this.config.baseUrl,
 			},
 		});
 	}
@@ -340,6 +361,37 @@ export class VntanaTestClient {
 				sortDirection: 'ASC',
 			},
 		});
+	}
+
+	/**
+	 * Find an existing product suitable for testing (with COMPLETED conversion)
+	 * Returns { uuid, clientUuid } or null if none found
+	 */
+	async findExistingProduct(): Promise<{ uuid: string; clientUuid: string } | null> {
+		const response = await this.searchProducts({ size: 20 });
+		if (!response.success) return null;
+
+		// First try to find a product in the configured workspace
+		let product = response.response.grid.find((p: any) =>
+			p.clientUuid === this.config.workspaceUuid &&
+			(p.conversionStatus === 'COMPLETED' || p.status === 'DRAFT')
+		);
+
+		// If no products in configured workspace, use any accessible product
+		if (!product) {
+			product = response.response.grid.find((p: any) =>
+				p.conversionStatus === 'COMPLETED' || p.status === 'DRAFT'
+			);
+			if (product) {
+				console.log(`Note: Using product from workspace ${product.clientUuid} (configured workspace is empty)`);
+			}
+		}
+
+		if (product) {
+			return { uuid: product.uuid, clientUuid: product.clientUuid };
+		}
+
+		return null;
 	}
 
 	/**

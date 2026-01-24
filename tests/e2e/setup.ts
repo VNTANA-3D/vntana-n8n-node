@@ -17,6 +17,8 @@ export interface TestConfig {
 	workspaceUuid: string;
 	pipelineUuid: string;
 	baseUrl: string;
+	// Optional: existing product UUID for testing uploads when product creation is unavailable
+	existingProductUuid: string;
 }
 
 /**
@@ -32,6 +34,8 @@ export function getTestConfig(): TestConfig {
 	const workspaceUuid = process.env.VNTANA_TEST_WORKSPACE_UUID || process.env.VNTANA_WORKSPACE_UUID;
 	const pipelineUuid = process.env.VNTANA_TEST_PIPELINE_UUID || process.env.VNTANA_PIPELINE_UUID || '';
 	const baseUrl = process.env.VNTANA_API_BASE_URL || 'https://api-platform.vntana.com';
+	// Optional: existing product UUID for upload tests when product creation is unavailable
+	const existingProductUuid = process.env.VNTANA_TEST_EXISTING_PRODUCT_UUID || process.env.VNTANA_EXISTING_PRODUCT_UUID || '';
 
 	const missing: string[] = [];
 	if (!email) missing.push('VNTANA_TEST_EMAIL');
@@ -53,6 +57,7 @@ export function getTestConfig(): TestConfig {
 		workspaceUuid: workspaceUuid!,
 		pipelineUuid,
 		baseUrl,
+		existingProductUuid,
 	};
 }
 

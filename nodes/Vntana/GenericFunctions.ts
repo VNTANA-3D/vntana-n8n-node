@@ -275,7 +275,7 @@ export async function uploadToSignedUrl(
 	const baseUrl = getBaseUrl(credentials);
 
 	const requestOptions: IHttpRequestOptions = {
-		method: 'POST',
+		method: 'PUT',
 		url: signedUrl,
 		headers: {
 			'Origin': baseUrl,
@@ -639,6 +639,7 @@ export function sanitizeFileName(fileName: string): string {
 
 /**
  * Get signed URL for product asset upload
+ * Note: Requires Origin header per VNTANA API documentation
  */
 export async function getAssetUploadSignedUrl(
 	this: IExecuteFunctions,
@@ -648,10 +649,13 @@ export async function getAssetUploadSignedUrl(
 	fileSize: number,
 	contentType: string,
 ): Promise<{ signedUrl: string; blobId: string; requestUuid: string }> {
+	const credentials = await this.getCredentials('vntanaApi');
+	const baseUrl = getBaseUrl(credentials);
+
 	const body: IDataObject = {
 		clientUuid,
 		productUuid,
-		assetSettings: {
+		resourceSettings: {
 			contentType,
 			originalName: fileName,
 			originalSize: fileSize,
@@ -663,6 +667,12 @@ export async function getAssetUploadSignedUrl(
 		'POST',
 		'/v1/storage/upload/clients/products/asset/sign-url',
 		body,
+		{},
+		{
+			headers: {
+				Origin: baseUrl,
+			},
+		},
 	);
 
 	const signedUrlData = response.response as IDataObject;
