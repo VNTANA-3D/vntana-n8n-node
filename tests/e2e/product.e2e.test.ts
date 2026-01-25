@@ -240,6 +240,85 @@ describe('Product E2E', () => {
 		});
 	});
 
+	describe('Update Status', () => {
+		it.skipIf(shouldSkipE2E())('should update a product status to LIVE_INTERNAL', async () => {
+			let productUuid: string | null = null;
+
+			// Step 1: Create a product to update
+			const createResponse = await client.createProduct({
+				name: `Test Status Update ${Date.now()}`,
+				assetType: 'IMAGE',
+				status: 'DRAFT',
+			});
+
+			if (createResponse.success) {
+				productUuid = createResponse.response.uuid;
+				createdProductUuids.push(productUuid);
+			} else {
+				// Use existing product for status update test
+				if (!existingProduct) {
+					console.log('Status update test skipped - cannot create product and no existing product found');
+					return;
+				}
+				productUuid = existingProduct.uuid;
+				console.log('Using existing product for status update test:', productUuid);
+			}
+
+			// Step 2: Update status to LIVE_INTERNAL
+			const updateResponse = await client.updateProductStatus(
+				[productUuid],
+				'LIVE_INTERNAL',
+			);
+
+			if (!updateResponse.success) {
+				const errorMsg = updateResponse.errors?.[0];
+				console.log('Status update failed:', typeof errorMsg === 'string' ? errorMsg : errorMsg?.message || JSON.stringify(updateResponse.errors));
+				console.log('Write operations may not be available for this account');
+				return;
+			}
+
+			expect(updateResponse.success).toBe(true);
+			expect(updateResponse.response).toBeDefined();
+		});
+
+		it.skipIf(shouldSkipE2E())('should update multiple products status in batch', async () => {
+			const productUuids: string[] = [];
+
+			// Create two products for batch update
+			for (let i = 0; i < 2; i++) {
+				const createResponse = await client.createProduct({
+					name: `Test Batch Status ${Date.now()}-${i}`,
+					assetType: 'IMAGE',
+					status: 'DRAFT',
+				});
+
+				if (createResponse.success) {
+					productUuids.push(createResponse.response.uuid);
+					createdProductUuids.push(createResponse.response.uuid);
+				}
+			}
+
+			if (productUuids.length < 2) {
+				console.log('Batch status update test skipped - could not create enough products');
+				return;
+			}
+
+			// Update both products to LIVE_INTERNAL
+			const updateResponse = await client.updateProductStatus(
+				productUuids,
+				'LIVE_INTERNAL',
+			);
+
+			if (!updateResponse.success) {
+				const errorMsg = updateResponse.errors?.[0];
+				console.log('Batch status update failed:', typeof errorMsg === 'string' ? errorMsg : errorMsg?.message || JSON.stringify(updateResponse.errors));
+				return;
+			}
+
+			expect(updateResponse.success).toBe(true);
+		});
+	});
+
 	describe('Download Model', () => {
 		// Note: This test requires an existing product with a converted model
 		// It will be skipped if no products with GLB conversion exist

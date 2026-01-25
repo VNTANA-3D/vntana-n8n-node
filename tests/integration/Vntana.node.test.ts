@@ -152,6 +152,13 @@ describe('Vntana Node', () => {
 			expect(uploadAssetOption).toBeDefined();
 			expect(uploadAssetOption?.name).toBe('Upload Asset');
 		});
+
+		it('should have update status operation', () => {
+			const options = operationProperty?.options as Array<{ name: string; value: string }>;
+			const updateStatusOption = options?.find((o) => o.value === 'updateStatus');
+			expect(updateStatusOption).toBeDefined();
+			expect(updateStatusOption?.name).toBe('Update Status');
+		});
 	});
 
 	describe('render operations', () => {

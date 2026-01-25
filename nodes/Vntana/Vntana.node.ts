@@ -30,6 +30,7 @@ import {
 	productDownloadModelFields,
 	productUpload3DModelFields,
 	productUploadAssetFields,
+	productUpdateStatusFields,
 	renderOperations,
 	renderDownloadFields,
 	renderUploadFields,
@@ -85,6 +86,7 @@ export class Vntana implements INodeType {
 			...productDownloadModelFields,
 			...productUpload3DModelFields,
 			...productUploadAssetFields,
+			...productUpdateStatusFields,
 			...renderDownloadFields,
 			...renderUploadFields,
 			...attachmentUploadFields,
@@ -478,6 +480,49 @@ export class Vntana implements INodeType {
 						);
 
 						returnData.push({ json: result });
+					}
+
+					// -------------------------------------------------------------
+					// Product: Update Status
+					// -------------------------------------------------------------
+					if (operation === 'updateStatus') {
+						const productUuidsRaw = this.getNodeParameter('productUuids', i) as string;
+						const status = this.getNodeParameter('status', i) as string;
+						const clientUuid = await getClientUuid.call(this, i);
+
+						// Parse UUIDs (support comma-separated for batch)
+						const productUuids = productUuidsRaw
+							.split(',')
+							.map((uuid) => uuid.trim())
+							.filter((uuid) => uuid.length > 0);
+
+						if (productUuids.length === 0) {
+							throw new Error('At least one Product UUID is required');
+						}
+
+						const body: IDataObject = {
+							items: productUuids.map((uuid) => ({ uuid, status })),
+						};
+						const qs: IDataObject = { clientUuid };
+
+						const response = await vntanaApiRequest.call(
+							this,
+							'PUT',
+							'/v1/products/status',
+							body,
+							qs,
+						);
+
+						// Return response with updated product info
+						const result = response.response as IDataObject;
+						returnData.push({
+							json: {
+								success: true,
+								updatedProducts: productUuids,
+								status,
+								response: result,
+							},
+						});
 					}
 				}
 

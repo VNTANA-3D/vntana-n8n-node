@@ -388,17 +388,20 @@ export class VntanaTestClient {
 	}
 
 	/**
-	 * Search attachments
+	 * Search attachments (renders, turntables, and attachments)
+	 * Note: This endpoint uses 0-based pagination (page 0 is the first page)
 	 */
-	async searchAttachments(productUuid: string): Promise<ApiResponse> {
-		return this.request('POST', '/v1/attachments/search', {
-			body: {
-				page: 1,
-				size: 100,
-				productUuid,
-				sortDirection: 'ASC',
-			},
-		});
+	async searchAttachments(productUuid: string, clientUuid?: string): Promise<ApiResponse> {
+		const body: any = {
+			page: 0, // This endpoint uses 0-based pagination
+			size: 100,
+			productUuid,
+			sortDirection: 'ASC',
+		};
+		if (clientUuid) {
+			body.clientUuid = clientUuid;
+		}
+		return this.request('POST', '/v1/attachments/search', { body });
 	}
 
 	/**
@@ -457,9 +460,59 @@ export class VntanaTestClient {
 	/**
 	 * Download an attachment by blob ID
 	 */
-	async downloadAttachment(blobId: string): Promise<Buffer> {
+	async downloadAttachment(blobId: string, clientUuid?: string): Promise<Buffer> {
 		return this.downloadBinary(`/v1/comments/images/${blobId}`, {
-			clientUuid: this.config.workspaceUuid,
+			clientUuid: clientUuid || this.config.workspaceUuid,
+		});
+	}
+
+	/**
+	 * Find an existing product with renders (for render download tests)
+	 * Returns { uuid, clientUuid } or null if none found
+	 */
+	async findProductWithRenders(): Promise<{ uuid: string; clientUuid: string } | null> {
+		const response = await this.searchProducts({ size: 50 });
+		if (!response.success) return null;
+
+		// Look for products with COMPLETED conversion (which generates renders)
+		for (const product of response.response.grid) {
+			if (product.conversionStatus !== 'COMPLETED') continue;
+
+			// Check if this product has renders by searching attachments
+			const attachments = await this.searchAttachments(product.uuid, product.clientUuid);
+			if (!attachments.success) continue;
+
+			// Look for RENDER or TURNTABLE type attachments
+			const hasRenders = attachments.response.grid.some(
+				(att: any) => att.entityType === 'RENDER' || att.entityType === 'TURNTABLE'
+			);
+
+			if (hasRenders) {
+				return { uuid: product.uuid, clientUuid: product.clientUuid };
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Update product status
+	 * @param productUuids - Array of product UUIDs to update
+	 * @param status - Target status (DRAFT, LIVE_INTERNAL, LIVE_PUBLIC)
+	 * @param clientUuid - Optional workspace UUID (defaults to config)
+	 */
+	async updateProductStatus(
+		productUuids: string[],
+		status: 'DRAFT' | 'LIVE_INTERNAL' | 'LIVE_PUBLIC',
+		clientUuid?: string,
+	): Promise<ApiResponse> {
+		return this.request('PUT', '/v1/products/status', {
+			body: {
+				items: productUuids.map((uuid) => ({ uuid, status })),
+			},
+			queryParams: {
+				clientUuid: clientUuid || this.config.workspaceUuid,
+			},
 		});
 	}
 }

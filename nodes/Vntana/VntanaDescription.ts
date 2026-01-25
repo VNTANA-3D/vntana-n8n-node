@@ -77,6 +77,12 @@ export const productOperations: INodeProperties = {
 			description: 'Upload an image, video, document, or audio file',
 			action: 'Upload an asset',
 		},
+		{
+			name: 'Update Status',
+			value: 'updateStatus',
+			description: 'Update the status of one or more products',
+			action: 'Update product status',
+		},
 	],
 	default: 'search',
 };
@@ -1185,3 +1191,57 @@ export const workspaceListFields: INodeProperties[] = [];
 // =============================================================================
 
 export const pipelineListFields: INodeProperties[] = [];
+
+// =============================================================================
+// PRODUCT: UPDATE STATUS FIELDS
+// =============================================================================
+
+export const productUpdateStatusFields: INodeProperties[] = [
+	{
+		displayName: 'Product UUID(s)',
+		name: 'productUuids',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['updateStatus'],
+			},
+		},
+		description: 'UUID of the product to update. For multiple products, use comma-separated UUIDs.',
+	},
+	{
+		displayName: 'Status',
+		name: 'status',
+		type: 'options',
+		required: true,
+		options: [
+			{ name: 'Draft', value: 'DRAFT' },
+			{ name: 'Live Internal', value: 'LIVE_INTERNAL' },
+			{ name: 'Live Public', value: 'LIVE_PUBLIC' },
+		],
+		default: 'DRAFT',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['updateStatus'],
+			},
+		},
+		description: 'Target status for the product(s)',
+	},
+	{
+		displayName: 'Workspace UUID',
+		name: 'clientUuid',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['updateStatus'],
+			},
+		},
+		description: 'UUID of the workspace. Leave empty to use the default from credentials.',
+	},
+];

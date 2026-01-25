@@ -96,17 +96,19 @@ describe('Attachment E2E', () => {
 			// Verify upload completed (no error thrown)
 		});
 
-		it.skipIf(shouldSkipE2E())('should handle attachment with different content types', async () => {
+		it.skipIf(shouldSkipE2E())('should handle attachment with octet-stream content type', async () => {
 			if (!testProduct) {
 				console.log('Binary upload test skipped - test product not created');
 				return;
 			}
 
-			// Upload as generic binary
+			// Upload a PDF as octet-stream (simulating generic binary upload)
+			// Note: The file extension must be in the allowed list even with octet-stream content type
+			// Allowed: jpeg, jpg, png, bmp, gif, tiff, svg, mp4, tif, mov, avi, pdf
 			const pdfBuffer = getTestPdf();
 			const signedUrlResponse = await client.getResourceUploadSignedUrl(
 				testProduct.uuid,
-				'test-binary.bin',
+				'test-binary.pdf', // Using .pdf extension since .bin is not supported
 				pdfBuffer.length,
 				'application/octet-stream',
 				'ATTACHMENT',
