@@ -66,6 +66,48 @@ cd ~/.n8n/custom && npm link n8n-nodes-vntana
 n8n start
 ```
 
+## Versioning Rules
+
+**IMPORTANT:** Always bump the version when committing changes to node code (`nodes/` or `credentials/`).
+
+### When to Bump Version
+
+| Change Type | Bump? | Version Type |
+|-------------|-------|--------------|
+| New operation/feature in node | ✅ Yes | `patch` or `minor` |
+| Bug fix in node code | ✅ Yes | `patch` |
+| Breaking API changes | ✅ Yes | `major` |
+| Test-only changes (no node code) | ❌ No | - |
+| Documentation-only changes | ❌ No | - |
+| CI/CD workflow changes | ❌ No | - |
+
+### Version Bump Workflow
+
+When committing changes that affect `nodes/` or `credentials/`:
+
+```bash
+# 1. Run tests first
+npm test
+
+# 2. Bump version (this creates a commit and tag)
+npm version patch   # Bug fixes, small features
+npm version minor   # New operations, significant features
+npm version major   # Breaking changes
+
+# 3. Push with tags
+git push origin main --tags
+
+# 4. Publish to npm
+npm publish
+```
+
+### Commit Without Publishing
+
+If you need to commit node changes but defer publishing:
+1. Make your changes and commit them
+2. Before the next publish, bump version to cover all changes since last release
+3. Then publish
+
 ## Publishing to npm
 
 ### Pre-publish Checklist
