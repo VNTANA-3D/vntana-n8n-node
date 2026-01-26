@@ -8,7 +8,8 @@ import type {
 } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
 
-import type { ModelOpsParameters, OptimizationPreset } from './types';
+import type { ModelOpsParameters, OptimizationPreset, VntanaCredentials } from './types';
+import { isGridResponse } from './types';
 
 const DEFAULT_BASE_URL = 'https://api-platform.vntana.com';
 
@@ -38,6 +39,50 @@ export function getBaseUrl(credentials: IDataObject): string {
 }
 
 /**
+ * Validate and extract typed credentials (fixes H-1: unsafe casts)
+ */
+export function validateCredentials(credentials: IDataObject): VntanaCredentials {
+	const email = credentials.email;
+	const password = credentials.password;
+	const organizationUuid = credentials.organizationUuid;
+
+	if (typeof email !== 'string' || !email) {
+		throw new Error('Credentials missing required field: email');
+	}
+	if (typeof password !== 'string' || !password) {
+		throw new Error('Credentials missing required field: password');
+	}
+	if (typeof organizationUuid !== 'string' || !organizationUuid) {
+		throw new Error('Credentials missing required field: organizationUuid');
+	}
+
+	return {
+		email,
+		password,
+		organizationUuid,
+		defaultClientUuid: typeof credentials.defaultClientUuid === 'string'
+			? credentials.defaultClientUuid : undefined,
+		baseUrl: typeof credentials.baseUrl === 'string'
+			? credentials.baseUrl : undefined,
+	};
+}
+
+/**
+ * Parse comma-separated string into array of trimmed, non-empty strings (fixes H-4: duplicated parsing)
+ */
+export function parseCommaSeparatedList(value: unknown): string[] {
+	if (typeof value === 'string') {
+		return value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+	}
+	if (Array.isArray(value)) {
+		return value
+			.filter(s => typeof s === 'string' && s.trim().length > 0)
+			.map(s => (s as string).trim());
+	}
+	return [];
+}
+
+/**
  * Authenticate with VNTANA using email/password, then refresh with organization UUID
  * Returns a Bearer token string ready to use in headers
  */
@@ -45,9 +90,8 @@ async function getAuthToken(
 	executeFunctions: IExecuteFunctions,
 ): Promise<string> {
 	const credentials = await executeFunctions.getCredentials('vntanaApi');
-	const email = credentials.email as string;
-	const password = credentials.password as string;
-	const organizationUuid = credentials.organizationUuid as string;
+	const validatedCreds = validateCredentials(credentials);
+	const { email, password, organizationUuid } = validatedCreds;
 	const baseUrl = getBaseUrl(credentials);
 
 	// Check cache using credential-based key
@@ -247,12 +291,18 @@ export async function vntanaApiRequestAllItems(
 		const requestBody = { ...body, page, size };
 		const response = await vntanaApiRequest.call(this, method, endpoint, requestBody, qs);
 
-		const items = (response.response as IDataObject)?.grid as IDataObject[];
-		if (items && items.length > 0) {
-			returnData.push(...items);
-			const totalCount = (response.response as IDataObject)?.totalCount as number;
-			hasMore = returnData.length < totalCount;
-			page++;
+		const responseData = response.response as IDataObject;
+		if (isGridResponse(responseData)) {
+			const items = responseData.grid;
+			if (items.length > 0) {
+				returnData.push(...items);
+				const totalCount = responseData.totalCount ?? 0;
+				// Fix M-5: Exit early when items < size (no more pages)
+				hasMore = items.length === size && returnData.length < totalCount;
+				page++;
+			} else {
+				hasMore = false;
+			}
 		} else {
 			hasMore = false;
 		}

@@ -285,3 +285,51 @@ export interface ListWorkspacesResponse {
 export interface ListPipelinesResponse {
 	pipelines: VntanaPipeline[];
 }
+
+/**
+ * Validated credentials interface (fixes H-1: unsafe casts)
+ */
+export interface VntanaCredentials {
+	email: string;
+	password: string;
+	organizationUuid: string;
+	defaultClientUuid?: string;
+	baseUrl?: string;
+}
+
+/**
+ * Credential test HTTP response (fixes C-1: Promise<any>)
+ */
+export interface CredentialTestHttpResponse {
+	headers?: Record<string, string>;
+	success?: boolean;
+	response?: {
+		grid?: Array<{ name?: string }>;
+	};
+}
+
+/**
+ * Credential test helpers interface (fixes C-1: Promise<any>)
+ */
+export interface CredentialTestHelpers {
+	httpRequest?: (options: object) => Promise<CredentialTestHttpResponse>;
+}
+
+/**
+ * Type guard for grid response (fixes H-2: unsafe casts)
+ */
+export function isGridResponse(obj: unknown): obj is { grid: IDataObject[]; totalCount?: number } {
+	return typeof obj === 'object' && obj !== null &&
+		'grid' in obj && Array.isArray((obj as { grid: unknown }).grid);
+}
+
+/**
+ * Type guard for signed URL response validation
+ */
+export function isSignedUrlResponseValid(obj: unknown): obj is SignedUrlResponse {
+	if (typeof obj !== 'object' || obj === null) return false;
+	const o = obj as Record<string, unknown>;
+	return typeof o.location === 'string' &&
+		typeof o.blobId === 'string' &&
+		typeof o.requestUuid === 'string';
+}

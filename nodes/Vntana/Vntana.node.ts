@@ -21,6 +21,7 @@ import {
 	createProductWithAsset,
 	validateBinaryData,
 	sanitizeFileName,
+	parseCommaSeparatedList,
 } from './GenericFunctions';
 
 import {
@@ -51,6 +52,7 @@ import type {
 	ListPipelinesResponse,
 	AssetType,
 	OptimizationPreset,
+	CredentialTestHelpers,
 } from './types';
 
 export class Vntana implements INodeType {
@@ -124,8 +126,8 @@ export class Vntana implements INodeType {
 
 				try {
 					// Use httpRequest instead of deprecated request
-					// Type assertion needed as ICredentialTestFunctions typing is incomplete
-					const helpers = this.helpers as unknown as { httpRequest?: (options: object) => Promise<any> };
+					// Type assertion needed as ICredentialTestFunctions typing is incomplete (fixes C-1: Promise<any>)
+					const helpers = this.helpers as unknown as CredentialTestHelpers;
 
 					// Runtime check for httpRequest availability
 					if (!helpers.httpRequest || typeof helpers.httpRequest !== 'function') {
@@ -226,6 +228,12 @@ export class Vntana implements INodeType {
 		const resource = this.getNodeParameter('resource', 0) as string;
 		const operation = this.getNodeParameter('operation', 0) as string;
 
+		// Helper function for type-safe array checks (fixes H-3: unsafe casts)
+		const isNonEmptyStringArray = (value: unknown): value is string[] => {
+			return Array.isArray(value) && value.length > 0 &&
+				value.every(item => typeof item === 'string');
+		};
+
 		for (let i = 0; i < items.length; i++) {
 			try {
 				// =================================================================
@@ -258,17 +266,18 @@ export class Vntana implements INodeType {
 						if (filters.searchTerm) {
 							body.searchTerm = filters.searchTerm;
 						}
-						if (filters.status && (filters.status as string[]).length > 0) {
+						if (isNonEmptyStringArray(filters.status)) {
 							body.status = filters.status;
 						}
-						if (filters.conversionStatuses && (filters.conversionStatuses as string[]).length > 0) {
+						if (isNonEmptyStringArray(filters.conversionStatuses)) {
 							body.conversionStatuses = filters.conversionStatuses;
 						}
 						if (filters.name) {
 							body.name = filters.name;
 						}
-						if (filters.tagsUuids) {
-							body.tagsUuids = (filters.tagsUuids as string).split(',').map(s => s.trim());
+						const tagsUuids = parseCommaSeparatedList(filters.tagsUuids);
+						if (tagsUuids.length > 0) {
+							body.tagsUuids = tagsUuids;
 						}
 
 						let products: IDataObject[];
@@ -406,11 +415,13 @@ export class Vntana implements INodeType {
 						if (additionalOptions.status) {
 							productData.status = additionalOptions.status;
 						}
-						if (additionalOptions.tagsUuids) {
-							productData.tagsUuids = (additionalOptions.tagsUuids as string).split(',').map(s => s.trim());
+						const optTagsUuids = parseCommaSeparatedList(additionalOptions.tagsUuids);
+						if (optTagsUuids.length > 0) {
+							productData.tagsUuids = optTagsUuids;
 						}
-						if (additionalOptions.projectsUuids) {
-							productData.projectsUuids = (additionalOptions.projectsUuids as string).split(',').map(s => s.trim());
+						const optProjectsUuids = parseCommaSeparatedList(additionalOptions.projectsUuids);
+						if (optProjectsUuids.length > 0) {
+							productData.projectsUuids = optProjectsUuids;
 						}
 
 						// Create product and upload asset
@@ -463,11 +474,13 @@ export class Vntana implements INodeType {
 						if (additionalOptions.status) {
 							productData.status = additionalOptions.status;
 						}
-						if (additionalOptions.tagsUuids) {
-							productData.tagsUuids = (additionalOptions.tagsUuids as string).split(',').map(s => s.trim());
+						const assetTagsUuids = parseCommaSeparatedList(additionalOptions.tagsUuids);
+						if (assetTagsUuids.length > 0) {
+							productData.tagsUuids = assetTagsUuids;
 						}
-						if (additionalOptions.projectsUuids) {
-							productData.projectsUuids = (additionalOptions.projectsUuids as string).split(',').map(s => s.trim());
+						const assetProjectsUuids = parseCommaSeparatedList(additionalOptions.projectsUuids);
+						if (assetProjectsUuids.length > 0) {
+							productData.projectsUuids = assetProjectsUuids;
 						}
 
 						// Create product and upload asset

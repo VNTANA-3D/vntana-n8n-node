@@ -6,8 +6,11 @@ import {
 	sanitizeFileName,
 	getBaseUrl,
 	clearTokenCache,
+	validateCredentials,
+	parseCommaSeparatedList,
 	OPTIMIZATION_PRESETS,
 } from '../../nodes/Vntana/GenericFunctions';
+import { isGridResponse } from '../../nodes/Vntana/types';
 
 // Mock IExecuteFunctions for validateBinaryData tests
 function createMockExecuteFunctions(): IExecuteFunctions {
@@ -374,6 +377,132 @@ describe('GenericFunctions', () => {
 			const mobilePolys = parseInt(OPTIMIZATION_PRESETS.mobile.OPTIMIZATION?.poly || '0', 10);
 			const webPolys = parseInt(OPTIMIZATION_PRESETS.webOptimized.OPTIMIZATION?.poly || '0', 10);
 			expect(mobilePolys).toBeLessThan(webPolys);
+		});
+	});
+
+	describe('validateCredentials', () => {
+		it('should return validated credentials for valid input', () => {
+			const creds: IDataObject = {
+				email: 'test@example.com',
+				password: 'pass123',
+				organizationUuid: 'uuid-123',
+			};
+			const result = validateCredentials(creds);
+			expect(result.email).toBe('test@example.com');
+			expect(result.password).toBe('pass123');
+			expect(result.organizationUuid).toBe('uuid-123');
+		});
+
+		it('should include optional fields when provided', () => {
+			const creds: IDataObject = {
+				email: 'test@example.com',
+				password: 'pass123',
+				organizationUuid: 'uuid-123',
+				defaultClientUuid: 'client-uuid',
+				baseUrl: 'https://custom.api.com',
+			};
+			const result = validateCredentials(creds);
+			expect(result.defaultClientUuid).toBe('client-uuid');
+			expect(result.baseUrl).toBe('https://custom.api.com');
+		});
+
+		it('should throw for missing email', () => {
+			const creds: IDataObject = { password: 'pass', organizationUuid: 'uuid-123' };
+			expect(() => validateCredentials(creds)).toThrow('email');
+		});
+
+		it('should throw for missing password', () => {
+			const creds: IDataObject = { email: 'test@example.com', organizationUuid: 'uuid-123' };
+			expect(() => validateCredentials(creds)).toThrow('password');
+		});
+
+		it('should throw for missing organizationUuid', () => {
+			const creds: IDataObject = { email: 'test@example.com', password: 'pass' };
+			expect(() => validateCredentials(creds)).toThrow('organizationUuid');
+		});
+
+		it('should throw for empty email string', () => {
+			const creds: IDataObject = { email: '', password: 'pass', organizationUuid: 'uuid' };
+			expect(() => validateCredentials(creds)).toThrow('email');
+		});
+	});
+
+	describe('parseCommaSeparatedList', () => {
+		it('should parse comma-separated string', () => {
+			expect(parseCommaSeparatedList('a, b, c')).toEqual(['a', 'b', 'c']);
+		});
+
+		it('should handle string without spaces', () => {
+			expect(parseCommaSeparatedList('uuid1,uuid2,uuid3')).toEqual(['uuid1', 'uuid2', 'uuid3']);
+		});
+
+		it('should handle empty values in string', () => {
+			expect(parseCommaSeparatedList('a,,b')).toEqual(['a', 'b']);
+		});
+
+		it('should handle single value', () => {
+			expect(parseCommaSeparatedList('single')).toEqual(['single']);
+		});
+
+		it('should return empty array for null', () => {
+			expect(parseCommaSeparatedList(null)).toEqual([]);
+		});
+
+		it('should return empty array for undefined', () => {
+			expect(parseCommaSeparatedList(undefined)).toEqual([]);
+		});
+
+		it('should return empty array for number', () => {
+			expect(parseCommaSeparatedList(123)).toEqual([]);
+		});
+
+		it('should handle array input', () => {
+			expect(parseCommaSeparatedList(['a', 'b', 'c'])).toEqual(['a', 'b', 'c']);
+		});
+
+		it('should filter empty strings from array', () => {
+			expect(parseCommaSeparatedList(['a', '', 'b', '   '])).toEqual(['a', 'b']);
+		});
+
+		it('should return empty array for empty string', () => {
+			expect(parseCommaSeparatedList('')).toEqual([]);
+		});
+
+		it('should return empty array for whitespace-only string', () => {
+			expect(parseCommaSeparatedList('   ')).toEqual([]);
+		});
+	});
+
+	describe('isGridResponse', () => {
+		it('should return true for valid grid response', () => {
+			const response = { grid: [{ id: 1 }, { id: 2 }], totalCount: 2 };
+			expect(isGridResponse(response)).toBe(true);
+		});
+
+		it('should return true for empty grid', () => {
+			const response = { grid: [], totalCount: 0 };
+			expect(isGridResponse(response)).toBe(true);
+		});
+
+		it('should return false for null', () => {
+			expect(isGridResponse(null)).toBe(false);
+		});
+
+		it('should return false for undefined', () => {
+			expect(isGridResponse(undefined)).toBe(false);
+		});
+
+		it('should return false for object without grid', () => {
+			expect(isGridResponse({ items: [] })).toBe(false);
+		});
+
+		it('should return false for non-array grid', () => {
+			expect(isGridResponse({ grid: 'not an array' })).toBe(false);
+		});
+
+		it('should return true even without totalCount', () => {
+			const response = { grid: [] };
+			expect(isGridResponse(response)).toBe(true);
 		});
 	});
 });
