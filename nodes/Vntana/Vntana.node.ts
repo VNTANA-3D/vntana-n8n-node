@@ -553,10 +553,12 @@ export class Vntana implements INodeType {
 						const downloadAll = this.getNodeParameter('downloadAll', i) as boolean;
 						const binaryPropertyName = this.getNodeParameter('binaryPropertyName', i, 'data') as string;
 
-						// Step 1: Search for attachments (VNTANA uses 1-based pagination)
+						// Step 1: Search for attachments (this endpoint uses 0-based pagination)
+						// Always fetch all attachments, then filter by entityType
+						// (the API doesn't support filtering by entityType)
 						const searchBody: IDataObject = {
-							page: 1,
-							size: downloadAll ? 100 : 1,
+							page: 0,
+							size: 100,
 							productUuid,
 							sortDirection: 'ASC',
 						};
@@ -569,15 +571,23 @@ export class Vntana implements INodeType {
 						);
 
 						const attachmentsResponse = searchResponse.response as SearchAttachmentsResponse;
-						const attachments = (attachmentsResponse.grid || []).filter(
+						const allAttachments = attachmentsResponse.grid || [];
+						const attachments = allAttachments.filter(
 							(att: VntanaAttachment) => att.entityType === entityType,
 						);
 
 						if (attachments.length === 0) {
+							// Include debug info to help diagnose issues
+							const foundTypes = [...new Set(allAttachments.map((a: VntanaAttachment) => a.entityType))];
 							returnData.push({
 								json: {
 									success: false,
 									message: `No ${entityType.toLowerCase()} found for product ${productUuid}`,
+									debug: {
+										totalAttachments: allAttachments.length,
+										entityTypesFound: foundTypes,
+										requestedEntityType: entityType,
+									},
 								},
 							});
 							continue;
