@@ -83,6 +83,39 @@ export function parseCommaSeparatedList(value: unknown): string[] {
 }
 
 /**
+ * Merge attributes from key-value pairs and JSON input
+ * JSON values override key-value pairs for the same keys
+ */
+export function mergeAttributes(options: IDataObject): IDataObject {
+	const attributes: IDataObject = {};
+
+	// Extract from key-value fixedCollection
+	const attributesKeyValue = options.attributesKeyValue as IDataObject | undefined;
+	if (attributesKeyValue?.values && Array.isArray(attributesKeyValue.values)) {
+		for (const item of attributesKeyValue.values as Array<{ key: string; value: string }>) {
+			if (item.key && typeof item.key === 'string') {
+				attributes[item.key] = item.value || '';
+			}
+		}
+	}
+
+	// Parse and merge JSON attributes (overrides key-value pairs)
+	const attributesJson = options.attributesJson as string | undefined;
+	if (attributesJson && typeof attributesJson === 'string' && attributesJson.trim()) {
+		try {
+			const jsonAttributes = JSON.parse(attributesJson);
+			if (typeof jsonAttributes === 'object' && jsonAttributes !== null && !Array.isArray(jsonAttributes)) {
+				Object.assign(attributes, jsonAttributes);
+			}
+		} catch {
+			// Silent error handling for invalid JSON as per plan
+		}
+	}
+
+	return attributes;
+}
+
+/**
  * Authenticate with VNTANA using email/password, then refresh with organization UUID
  * Returns a Bearer token string ready to use in headers
  */

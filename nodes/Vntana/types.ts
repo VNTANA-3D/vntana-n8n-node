@@ -117,6 +117,31 @@ export interface VntanaTag extends IDataObject {
 }
 
 /**
+ * Search Tags Response
+ */
+export interface SearchTagsResponse {
+	totalCount: number;
+	grid: VntanaTag[];
+}
+
+/**
+ * VNTANA Tag Group
+ */
+export interface VntanaTagGroup extends IDataObject {
+	uuid: string;
+	name: string;
+	tags?: VntanaTag[];
+}
+
+/**
+ * List Tag Groups Response
+ */
+export interface ListTagGroupsResponse {
+	totalCount: number;
+	grid: VntanaTagGroup[];
+}
+
+/**
  * Search Attachments Response
  */
 export interface SearchAttachmentsResponse {

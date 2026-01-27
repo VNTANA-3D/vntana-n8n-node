@@ -34,6 +34,10 @@ export const resourceProperty: INodeProperties = {
 			name: 'Pipeline',
 			value: 'pipeline',
 		},
+		{
+			name: 'Tag',
+			value: 'tag',
+		},
 	],
 	default: 'product',
 };
@@ -82,6 +86,12 @@ export const productOperations: INodeProperties = {
 			value: 'updateStatus',
 			description: 'Update the status of one or more products',
 			action: 'Update product status',
+		},
+		{
+			name: 'Update Product',
+			value: 'updateProduct',
+			description: 'Update product name, description, status, tags, or attributes',
+			action: 'Update a product',
 		},
 	],
 	default: 'search',
@@ -216,6 +226,37 @@ export const pipelineOperations: INodeProperties = {
 		},
 	],
 	default: 'list',
+};
+
+// =============================================================================
+// TAG OPERATIONS
+// =============================================================================
+
+export const tagOperations: INodeProperties = {
+	displayName: 'Operation',
+	name: 'operation',
+	type: 'options',
+	noDataExpression: true,
+	displayOptions: {
+		show: {
+			resource: ['tag'],
+		},
+	},
+	options: [
+		{
+			name: 'Search',
+			value: 'search',
+			description: 'Search for tags in a workspace',
+			action: 'Search tags',
+		},
+		{
+			name: 'Create',
+			value: 'create',
+			description: 'Create a new tag',
+			action: 'Create a tag',
+		},
+	],
+	default: 'search',
 };
 
 // =============================================================================
@@ -1037,6 +1078,45 @@ export const productUpload3DModelFields: INodeProperties[] = [
 				default: '',
 				description: 'Comma-separated list of project UUIDs to link',
 			},
+			{
+				displayName: 'Attributes (Key-Value)',
+				name: 'attributesKeyValue',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				default: {},
+				description: 'Product attributes as key-value pairs',
+				options: [
+					{
+						name: 'values',
+						displayName: 'Attribute',
+						values: [
+							{
+								displayName: 'Key',
+								name: 'key',
+								type: 'string',
+								default: '',
+								description: 'Attribute key (e.g., SKU, Color)',
+							},
+							{
+								displayName: 'Value',
+								name: 'value',
+								type: 'string',
+								default: '',
+								description: 'Attribute value',
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Attributes (JSON)',
+				name: 'attributesJson',
+				type: 'json',
+				default: '',
+				description: 'Product attributes as JSON object. Supports expressions. Values override Key-Value attributes for the same keys.',
+			},
 		],
 	},
 ];
@@ -1170,6 +1250,45 @@ export const productUploadAssetFields: INodeProperties[] = [
 				default: '',
 				description: 'Comma-separated list of project UUIDs to link',
 			},
+			{
+				displayName: 'Attributes (Key-Value)',
+				name: 'attributesKeyValue',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				default: {},
+				description: 'Product attributes as key-value pairs',
+				options: [
+					{
+						name: 'values',
+						displayName: 'Attribute',
+						values: [
+							{
+								displayName: 'Key',
+								name: 'key',
+								type: 'string',
+								default: '',
+								description: 'Attribute key (e.g., SKU, Color)',
+							},
+							{
+								displayName: 'Value',
+								name: 'value',
+								type: 'string',
+								default: '',
+								description: 'Attribute value',
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Attributes (JSON)',
+				name: 'attributesJson',
+				type: 'json',
+				default: '',
+				description: 'Product attributes as JSON object. Supports expressions. Values override Key-Value attributes for the same keys.',
+			},
 		],
 	},
 ];
@@ -1191,6 +1310,259 @@ export const workspaceListFields: INodeProperties[] = [];
 // =============================================================================
 
 export const pipelineListFields: INodeProperties[] = [];
+
+// =============================================================================
+// TAG: SEARCH FIELDS
+// =============================================================================
+
+export const tagSearchFields: INodeProperties[] = [
+	{
+		displayName: 'Workspace UUID',
+		name: 'clientUuid',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['tag'],
+				operation: ['search'],
+			},
+		},
+		description: 'UUID of the workspace to search in. Leave empty to use the default from credentials.',
+	},
+	{
+		displayName: 'Return All',
+		name: 'returnAll',
+		type: 'boolean',
+		default: false,
+		displayOptions: {
+			show: {
+				resource: ['tag'],
+				operation: ['search'],
+			},
+		},
+		description: 'Whether to return all results or only up to a given limit',
+	},
+	{
+		displayName: 'Limit',
+		name: 'limit',
+		type: 'number',
+		default: 50,
+		typeOptions: {
+			minValue: 1,
+			maxValue: 100,
+		},
+		displayOptions: {
+			show: {
+				resource: ['tag'],
+				operation: ['search'],
+				returnAll: [false],
+			},
+		},
+		description: 'Max number of results to return',
+	},
+	{
+		displayName: 'Filters',
+		name: 'filters',
+		type: 'collection',
+		placeholder: 'Add Filter',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: ['tag'],
+				operation: ['search'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Search Term',
+				name: 'searchTerm',
+				type: 'string',
+				default: '',
+				description: 'Text to search for in tag names',
+			},
+		],
+	},
+];
+
+// =============================================================================
+// TAG: CREATE FIELDS
+// =============================================================================
+
+export const tagCreateFields: INodeProperties[] = [
+	{
+		displayName: 'Workspace UUID',
+		name: 'clientUuid',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['tag'],
+				operation: ['create'],
+			},
+		},
+		description: 'UUID of the workspace to create the tag in. Leave empty to use the default from credentials.',
+	},
+	{
+		displayName: 'Name',
+		name: 'name',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['tag'],
+				operation: ['create'],
+			},
+		},
+		description: 'Name for the new tag',
+	},
+	{
+		displayName: 'Options',
+		name: 'options',
+		type: 'collection',
+		placeholder: 'Add Option',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: ['tag'],
+				operation: ['create'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Tag Group UUID',
+				name: 'tagGroupUuid',
+				type: 'string',
+				default: '',
+				description: 'UUID of the tag group to add this tag to',
+			},
+		],
+	},
+];
+
+// =============================================================================
+// PRODUCT: UPDATE PRODUCT FIELDS
+// =============================================================================
+
+export const productUpdateFields: INodeProperties[] = [
+	{
+		displayName: 'Product UUID',
+		name: 'productUuid',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['updateProduct'],
+			},
+		},
+		description: 'UUID of the product to update',
+	},
+	{
+		displayName: 'Workspace UUID',
+		name: 'clientUuid',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['updateProduct'],
+			},
+		},
+		description: 'UUID of the workspace. Leave empty to use the default from credentials.',
+	},
+	{
+		displayName: 'Fields to Update',
+		name: 'updateFields',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['updateProduct'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Name',
+				name: 'name',
+				type: 'string',
+				default: '',
+				description: 'New name for the product',
+			},
+			{
+				displayName: 'Description',
+				name: 'description',
+				type: 'string',
+				default: '',
+				description: 'New description for the product',
+			},
+			{
+				displayName: 'Status',
+				name: 'status',
+				type: 'options',
+				options: [
+					{ name: 'Draft', value: 'DRAFT' },
+					{ name: 'Live Internal', value: 'LIVE_INTERNAL' },
+					{ name: 'Live Public', value: 'LIVE_PUBLIC' },
+				],
+				default: 'DRAFT',
+				description: 'New status for the product',
+			},
+			{
+				displayName: 'Tag UUIDs',
+				name: 'tagsUuids',
+				type: 'string',
+				default: '',
+				description: 'Comma-separated list of tag UUIDs to apply to the product',
+			},
+			{
+				displayName: 'Attributes (Key-Value)',
+				name: 'attributesKeyValue',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				default: {},
+				description: 'Product attributes as key-value pairs',
+				options: [
+					{
+						name: 'values',
+						displayName: 'Attribute',
+						values: [
+							{
+								displayName: 'Key',
+								name: 'key',
+								type: 'string',
+								default: '',
+								description: 'Attribute key (e.g., SKU, Color)',
+							},
+							{
+								displayName: 'Value',
+								name: 'value',
+								type: 'string',
+								default: '',
+								description: 'Attribute value',
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Attributes (JSON)',
+				name: 'attributesJson',
+				type: 'json',
+				default: '',
+				description: 'Product attributes as JSON object. Supports expressions. Values override Key-Value attributes for the same keys.',
+			},
+		],
+	},
+];
 
 // =============================================================================
 // PRODUCT: UPDATE STATUS FIELDS

@@ -22,6 +22,7 @@ import {
 	validateBinaryData,
 	sanitizeFileName,
 	parseCommaSeparatedList,
+	mergeAttributes,
 } from './GenericFunctions';
 
 import {
@@ -32,6 +33,7 @@ import {
 	productUpload3DModelFields,
 	productUploadAssetFields,
 	productUpdateStatusFields,
+	productUpdateFields,
 	renderOperations,
 	renderDownloadFields,
 	renderUploadFields,
@@ -40,11 +42,15 @@ import {
 	organizationOperations,
 	workspaceOperations,
 	pipelineOperations,
+	tagOperations,
+	tagSearchFields,
+	tagCreateFields,
 } from './VntanaDescription';
 
 import type {
 	SearchProductsResponse,
 	SearchAttachmentsResponse,
+	SearchTagsResponse,
 	SignedUrlResponse,
 	VntanaAttachment,
 	ListOrganizationsResponse,
@@ -84,14 +90,18 @@ export class Vntana implements INodeType {
 			organizationOperations,
 			workspaceOperations,
 			pipelineOperations,
+			tagOperations,
 			...productSearchFields,
 			...productDownloadModelFields,
 			...productUpload3DModelFields,
 			...productUploadAssetFields,
 			...productUpdateStatusFields,
+			...productUpdateFields,
 			...renderDownloadFields,
 			...renderUploadFields,
 			...attachmentUploadFields,
+			...tagSearchFields,
+			...tagCreateFields,
 		],
 	};
 
@@ -424,6 +434,12 @@ export class Vntana implements INodeType {
 							productData.projectsUuids = optProjectsUuids;
 						}
 
+						// Add attributes
+						const upload3DAttributes = mergeAttributes(additionalOptions);
+						if (Object.keys(upload3DAttributes).length > 0) {
+							productData.attributes = upload3DAttributes;
+						}
+
 						// Create product and upload asset
 						const result = await createProductWithAsset.call(
 							this,
@@ -483,6 +499,12 @@ export class Vntana implements INodeType {
 							productData.projectsUuids = assetProjectsUuids;
 						}
 
+						// Add attributes
+						const uploadAssetAttributes = mergeAttributes(additionalOptions);
+						if (Object.keys(uploadAssetAttributes).length > 0) {
+							productData.attributes = uploadAssetAttributes;
+						}
+
 						// Create product and upload asset
 						const result = await createProductWithAsset.call(
 							this,
@@ -536,6 +558,55 @@ export class Vntana implements INodeType {
 								response: result,
 							},
 						});
+					}
+
+					// -------------------------------------------------------------
+					// Product: Update Product
+					// -------------------------------------------------------------
+					if (operation === 'updateProduct') {
+						const productUuid = this.getNodeParameter('productUuid', i) as string;
+						const clientUuid = await getClientUuid.call(this, i);
+						const updateFields = this.getNodeParameter('updateFields', i, {}) as IDataObject;
+
+						const qs: IDataObject = { clientUuid };
+
+						// Build request body with only specified fields
+						const body: IDataObject = {
+							uuid: productUuid,
+						};
+
+						if (updateFields.name) {
+							body.name = updateFields.name;
+						}
+						if (updateFields.description !== undefined) {
+							body.description = updateFields.description;
+						}
+						if (updateFields.status) {
+							body.status = updateFields.status;
+						}
+
+						// Parse tags
+						const tagsUuids = parseCommaSeparatedList(updateFields.tagsUuids);
+						if (tagsUuids.length > 0) {
+							body.tagsUuids = tagsUuids;
+						}
+
+						// Merge attributes from key-value and JSON
+						const attributes = mergeAttributes(updateFields);
+						if (Object.keys(attributes).length > 0) {
+							body.attributes = attributes;
+						}
+
+						const response = await vntanaApiRequest.call(
+							this,
+							'PUT',
+							'/v1/products',
+							body,
+							qs,
+						);
+
+						const product = response.response as IDataObject;
+						returnData.push({ json: product });
 					}
 				}
 
@@ -850,6 +921,86 @@ export class Vntana implements INodeType {
 								},
 							});
 						}
+					}
+				}
+
+				// =================================================================
+				// TAG RESOURCE
+				// =================================================================
+				if (resource === 'tag') {
+					// -------------------------------------------------------------
+					// Tag: Search
+					// -------------------------------------------------------------
+					if (operation === 'search') {
+						const clientUuid = await getClientUuid.call(this, i);
+						const returnAll = this.getNodeParameter('returnAll', i) as boolean;
+						const limit = this.getNodeParameter('limit', i, 50) as number;
+						const filters = this.getNodeParameter('filters', i, {}) as IDataObject;
+
+						const qs: IDataObject = { clientUuid };
+
+						// Build request body
+						const body: IDataObject = {};
+
+						if (filters.searchTerm) {
+							body.searchTerm = filters.searchTerm;
+						}
+
+						let tags: IDataObject[];
+
+						if (returnAll) {
+							tags = await vntanaApiRequestAllItems.call(
+								this,
+								'POST',
+								'/v1/tags/search',
+								body,
+								qs,
+							);
+						} else {
+							body.page = 1;
+							body.size = limit;
+							const response = await vntanaApiRequest.call(
+								this,
+								'POST',
+								'/v1/tags/search',
+								body,
+								qs,
+							);
+							const searchResponse = response.response as SearchTagsResponse;
+							tags = searchResponse.grid || [];
+						}
+
+						for (const tag of tags) {
+							returnData.push({ json: tag });
+						}
+					}
+
+					// -------------------------------------------------------------
+					// Tag: Create
+					// -------------------------------------------------------------
+					if (operation === 'create') {
+						const clientUuid = await getClientUuid.call(this, i);
+						const name = this.getNodeParameter('name', i) as string;
+						const options = this.getNodeParameter('options', i, {}) as IDataObject;
+
+						const qs: IDataObject = { clientUuid };
+
+						const body: IDataObject = { name };
+
+						if (options.tagGroupUuid) {
+							body.tagGroupUuid = options.tagGroupUuid;
+						}
+
+						const response = await vntanaApiRequest.call(
+							this,
+							'POST',
+							'/v1/tags/create',
+							body,
+							qs,
+						);
+
+						const tag = response.response as IDataObject;
+						returnData.push({ json: tag });
 					}
 				}
 			} catch (error) {
