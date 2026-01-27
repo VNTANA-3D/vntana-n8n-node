@@ -616,8 +616,6 @@ export class Vntana implements INodeType {
 								mimeType,
 							);
 
-							const binaryKey = downloadAll ? `${binaryPropertyName}_${j}` : binaryPropertyName;
-
 							returnData.push({
 								json: {
 									attachmentUuid: attachment.uuid,
@@ -628,7 +626,7 @@ export class Vntana implements INodeType {
 									fileSize: binaryData.length,
 								},
 								binary: {
-									[binaryKey]: binary,
+									[binaryPropertyName]: binary,
 								},
 							});
 						}
