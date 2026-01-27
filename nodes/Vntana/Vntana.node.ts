@@ -937,10 +937,8 @@ export class Vntana implements INodeType {
 						const limit = this.getNodeParameter('limit', i, 50) as number;
 						const filters = this.getNodeParameter('filters', i, {}) as IDataObject;
 
-						const qs: IDataObject = { clientUuid };
-
-						// Build request body
-						const body: IDataObject = {};
+						// Build request body - clientUuid goes in body, not query string (per Postman collection)
+						const body: IDataObject = { clientUuid };
 
 						if (filters.searchTerm) {
 							body.searchTerm = filters.searchTerm;
@@ -954,7 +952,7 @@ export class Vntana implements INodeType {
 								'POST',
 								'/v1/tags/search',
 								body,
-								qs,
+								{},
 							);
 						} else {
 							body.page = 1;
@@ -964,7 +962,7 @@ export class Vntana implements INodeType {
 								'POST',
 								'/v1/tags/search',
 								body,
-								qs,
+								{},
 							);
 							const searchResponse = response.response as SearchTagsResponse;
 							tags = searchResponse.grid || [];
@@ -976,31 +974,52 @@ export class Vntana implements INodeType {
 					}
 
 					// -------------------------------------------------------------
-					// Tag: Create
+					// Tag: Create (with get-or-create pattern)
 					// -------------------------------------------------------------
 					if (operation === 'create') {
 						const clientUuid = await getClientUuid.call(this, i);
 						const name = this.getNodeParameter('name', i) as string;
 						const options = this.getNodeParameter('options', i, {}) as IDataObject;
 
-						const qs: IDataObject = { clientUuid };
-
-						const body: IDataObject = { name };
-
-						if (options.tagGroupUuid) {
-							body.tagGroupUuid = options.tagGroupUuid;
-						}
-
-						const response = await vntanaApiRequest.call(
+						// First, search for existing tag with this name to avoid duplicates
+						// Note: clientUuid goes in body, not query string (per Postman collection)
+						const searchResponse = await vntanaApiRequest.call(
 							this,
 							'POST',
-							'/v1/tags/create',
-							body,
-							qs,
+							'/v1/tags/search',
+							{ clientUuid, searchTerm: name, page: 1, size: 10 },
+							{},
 						);
 
-						const tag = response.response as IDataObject;
-						returnData.push({ json: tag });
+						// Check if tag already exists (exact name match, case-insensitive)
+						const searchResult = searchResponse.response as IDataObject;
+						const existingTags = (searchResult?.grid as IDataObject[]) || [];
+						const existingTag = existingTags.find(
+							(t: IDataObject) => t.name?.toString().toLowerCase() === name.toLowerCase(),
+						);
+
+						if (existingTag) {
+							// Return existing tag instead of creating duplicate
+							returnData.push({ json: existingTag });
+						} else {
+							// Create new tag - clientUuid and name in body only (per Postman collection)
+							const body: IDataObject = { clientUuid, name };
+
+							if (options.tagGroupUuid) {
+								body.tagGroupUuid = options.tagGroupUuid;
+							}
+
+							const response = await vntanaApiRequest.call(
+								this,
+								'POST',
+								'/v1/tags/create',
+								body,
+								{},
+							);
+
+							const tag = response.response as IDataObject;
+							returnData.push({ json: tag });
+						}
 					}
 				}
 			} catch (error) {
