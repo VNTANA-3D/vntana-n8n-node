@@ -219,6 +219,9 @@ export async function vntanaApiRequest(
 	const credentials = await this.getCredentials('vntanaApi');
 	const baseUrl = getBaseUrl(credentials);
 
+	// Extract headers from options to merge properly (don't let spread overwrite auth headers)
+	const { headers: extraHeaders, ...restOptions } = options;
+
 	const requestOptions: IHttpRequestOptions = {
 		method,
 		url: `${baseUrl}${endpoint}`,
@@ -226,11 +229,12 @@ export async function vntanaApiRequest(
 			Accept: 'application/json',
 			'Content-Type': 'application/json',
 			'X-AUTH-TOKEN': authToken,
+			...extraHeaders, // Merge additional headers without losing auth
 		},
 		qs,
 		body,
 		json: true,
-		...options,
+		...restOptions, // Spread remaining options (excluding headers)
 	};
 
 	// Remove empty body for GET requests
