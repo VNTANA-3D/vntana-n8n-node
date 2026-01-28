@@ -568,13 +568,27 @@ export class Vntana implements INodeType {
 						const clientUuid = await getClientUuid.call(this, i);
 						const updateFields = this.getNodeParameter('updateFields', i, {}) as IDataObject;
 
-						const qs: IDataObject = { clientUuid };
+						// VNTANA API uses PUT (full replace), not PATCH
+						// Step 1: GET the current product to get all existing fields
+						const getResponse = await vntanaApiRequest.call(
+							this,
+							'GET',
+							`/v1/products/${productUuid}`,
+							{},
+							{ clientUuid },
+						);
 
-						// Build request body with only specified fields
+						const currentProduct = getResponse.response as IDataObject;
+
+						// Step 2: Build the update body starting with current product data
 						const body: IDataObject = {
+							...currentProduct,
 							uuid: productUuid,
+							clientUuid,
+							deleteAsset: false, // Required field, preserve existing asset
 						};
 
+						// Step 3: Apply user's updates on top of current data
 						if (updateFields.name) {
 							body.name = updateFields.name;
 						}
@@ -585,24 +599,32 @@ export class Vntana implements INodeType {
 							body.status = updateFields.status;
 						}
 
-						// Parse tags
-						const tagsUuids = parseCommaSeparatedList(updateFields.tagsUuids);
-						if (tagsUuids.length > 0) {
-							body.tagsUuids = tagsUuids;
+						// Handle tags: API returns 'tags' (objects) but expects 'tagsUuids' (strings)
+						const newTagsUuids = parseCommaSeparatedList(updateFields.tagsUuids);
+						if (newTagsUuids.length > 0) {
+							// User provided new tags
+							body.tagsUuids = newTagsUuids;
+						} else if (Array.isArray(currentProduct.tags)) {
+							// Preserve existing tags by extracting UUIDs from tag objects
+							body.tagsUuids = (currentProduct.tags as Array<{ uuid: string }>).map(t => t.uuid);
+						}
+						// Remove the 'tags' field since API expects 'tagsUuids'
+						delete body.tags;
+
+						// Merge attributes from key-value and JSON with existing attributes
+						const newAttributes = mergeAttributes(updateFields);
+						if (Object.keys(newAttributes).length > 0) {
+							const existingAttributes = (currentProduct.attributes as IDataObject) || {};
+							body.attributes = { ...existingAttributes, ...newAttributes };
 						}
 
-						// Merge attributes from key-value and JSON
-						const attributes = mergeAttributes(updateFields);
-						if (Object.keys(attributes).length > 0) {
-							body.attributes = attributes;
-						}
-
+						// Step 4: PUT the complete updated product
 						const response = await vntanaApiRequest.call(
 							this,
 							'PUT',
 							'/v1/products',
 							body,
-							qs,
+							{},
 						);
 
 						const product = response.response as IDataObject;
