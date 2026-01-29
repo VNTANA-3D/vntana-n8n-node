@@ -66,6 +66,36 @@ cd ~/.n8n/custom && npm link n8n-nodes-vntana
 n8n start
 ```
 
+## Testing Workflow
+
+**IMPORTANT:** Before asking the user to test in n8n, verify the implementation works:
+
+### 1. Write Unit Tests
+All new operations must have unit tests. Run tests before any manual testing:
+```bash
+npm test
+```
+
+### 2. Test with curl First
+If it doesn't work with curl, it won't work with n8n. Always verify API calls work:
+
+```bash
+# Template for VNTANA API calls
+curl -X POST "https://api-platform.vntana.com/v1/<endpoint>" \
+  -H "Content-Type: application/json" \
+  -H "X-AUTH-TOKEN: Bearer <token>" \
+  -d '<json-body>'
+```
+
+### 3. Build and Relink
+```bash
+npm run build
+/Users/benconway/GitHub/VNTANA-n8n-node/.claude/skills/n8n-relink/scripts/relink.sh
+```
+
+### 4. Have User Test in n8n
+Only after curl verification succeeds.
+
 ## Versioning Rules
 
 **IMPORTANT:** Always bump the version when committing changes to node code (`nodes/` or `credentials/`).

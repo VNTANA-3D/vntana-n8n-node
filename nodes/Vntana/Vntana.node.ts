@@ -645,19 +645,57 @@ export class Vntana implements INodeType {
 						const cloneOptions = this.getNodeParameter('cloneOptions', i, {}) as IDataObject;
 						const optionalOverrides = this.getNodeParameter('optionalOverrides', i, {}) as IDataObject;
 
-						const credentials = await this.getCredentials('vntanaApi');
-						const organizationUuid = credentials.organizationUuid as string;
-
+						// Build request body with required fields
+						// Note: modelOpsParameters is required by the API even for clone operations
 						const body: IDataObject = {
 							originalProductUuid,
 							clientUuid: targetClientUuid,
-							clientOrganization: { organizationUuid },
 							publishToStatus,
-							cloneHotspots: cloneOptions.cloneHotspots ?? true,
-							cloneAnnotations: cloneOptions.cloneAnnotations ?? true,
-							cloneAttachments: cloneOptions.cloneAttachments ?? true,
-							cloneIntegrationAttributes: cloneOptions.cloneIntegrationAttributes ?? true,
+							// Default modelOpsParameters required by API
+							modelOpsParameters: {
+								OPTIMIZATION: {
+									forcePolygonCount: 'false',
+									bakeSmallFeatures: 'false',
+									obstructedGeometry: 'true',
+									freezeTransforms: 'false',
+									poly: '75000',
+									desiredOutput: 'AUTO',
+								},
+								OUTPUT_LAYER: {
+									fbxPbr: 'false',
+								},
+								AR_SCALING: null,
+								PIVOT_POINT_ALIGNMENT: {
+									pivotPoint: 'center',
+								},
+								DRACO_COMPRESSION: {
+									enabled: 'true',
+								},
+								TEXTURE_COMPRESSION: {
+									ambientOcclusionRadius: 'null',
+									useKTX: 'false',
+									bakeAmbientOcclusion: 'false',
+									maxDimension: '4096',
+									ambientOcclusionResolution: 'null',
+									forceFileSizeLimit: 'false',
+									aggression: '2',
+									lossless: 'false',
+									fileSizeLimit: 'null',
+									ambientOcclusionStrength: 'null',
+								},
+								ORIENTATION: {
+									roll: '0',
+									pitch: '0',
+									yaw: '0',
+								},
+							},
 						};
+
+						// Always include clone flags with their values (default to true)
+						body.cloneHotspots = cloneOptions.cloneHotspots !== false;
+						body.cloneAnnotations = cloneOptions.cloneAnnotations !== false;
+						body.cloneAttachments = cloneOptions.cloneAttachments !== false;
+						body.cloneIntegrationAttributes = cloneOptions.cloneIntegrationAttributes !== false;
 
 						// Add optional overrides if provided
 						if (optionalOverrides.name) {
@@ -705,7 +743,12 @@ export class Vntana implements INodeType {
 						const body: IDataObject = {
 							sourceProductUuid,
 							targetClientUuid,
-							targetClientOrganization: { organizationUuid },
+							targetClientOrganization: {
+								organizationUuid,
+								name: '',
+								slug: '',
+								imageBlobId: '',
+							},
 							publishToStatus,
 						};
 
