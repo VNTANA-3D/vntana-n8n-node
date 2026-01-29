@@ -34,6 +34,8 @@ import {
 	productUploadAssetFields,
 	productUpdateStatusFields,
 	productUpdateFields,
+	productCloneFields,
+	productMoveFields,
 	renderOperations,
 	renderDownloadFields,
 	renderUploadFields,
@@ -97,6 +99,8 @@ export class Vntana implements INodeType {
 			...productUploadAssetFields,
 			...productUpdateStatusFields,
 			...productUpdateFields,
+			...productCloneFields,
+			...productMoveFields,
 			...renderDownloadFields,
 			...renderUploadFields,
 			...attachmentUploadFields,
@@ -629,6 +633,91 @@ export class Vntana implements INodeType {
 
 						const product = response.response as IDataObject;
 						returnData.push({ json: product });
+					}
+
+					// -------------------------------------------------------------
+					// Product: Clone
+					// -------------------------------------------------------------
+					if (operation === 'clone') {
+						const originalProductUuid = this.getNodeParameter('originalProductUuid', i) as string;
+						const targetClientUuid = this.getNodeParameter('targetClientUuid', i) as string;
+						const publishToStatus = this.getNodeParameter('publishToStatus', i) as string;
+						const cloneOptions = this.getNodeParameter('cloneOptions', i, {}) as IDataObject;
+						const optionalOverrides = this.getNodeParameter('optionalOverrides', i, {}) as IDataObject;
+
+						const credentials = await this.getCredentials('vntanaApi');
+						const organizationUuid = credentials.organizationUuid as string;
+
+						const body: IDataObject = {
+							originalProductUuid,
+							clientUuid: targetClientUuid,
+							clientOrganization: { organizationUuid },
+							publishToStatus,
+							cloneHotspots: cloneOptions.cloneHotspots ?? true,
+							cloneAnnotations: cloneOptions.cloneAnnotations ?? true,
+							cloneAttachments: cloneOptions.cloneAttachments ?? true,
+							cloneIntegrationAttributes: cloneOptions.cloneIntegrationAttributes ?? true,
+						};
+
+						// Add optional overrides if provided
+						if (optionalOverrides.name) {
+							body.name = optionalOverrides.name;
+						}
+						if (optionalOverrides.description) {
+							body.description = optionalOverrides.description;
+						}
+						if (optionalOverrides.pipelineUuid) {
+							body.pipelineUuid = optionalOverrides.pipelineUuid;
+						}
+						const cloneTagsUuids = parseCommaSeparatedList(optionalOverrides.tagsUuids);
+						if (cloneTagsUuids.length > 0) {
+							body.tagsUuids = cloneTagsUuids;
+						}
+
+						// Merge attributes from key-value and JSON
+						const cloneAttributes = mergeAttributes(optionalOverrides);
+						if (Object.keys(cloneAttributes).length > 0) {
+							body.attributes = cloneAttributes;
+						}
+
+						const response = await vntanaApiRequest.call(
+							this,
+							'POST',
+							'/v1/products/clone',
+							body,
+						);
+
+						const clonedProduct = response.response as IDataObject;
+						returnData.push({ json: clonedProduct });
+					}
+
+					// -------------------------------------------------------------
+					// Product: Move
+					// -------------------------------------------------------------
+					if (operation === 'move') {
+						const sourceProductUuid = this.getNodeParameter('sourceProductUuid', i) as string;
+						const targetClientUuid = this.getNodeParameter('targetClientUuid', i) as string;
+						const publishToStatus = this.getNodeParameter('publishToStatus', i) as string;
+
+						const credentials = await this.getCredentials('vntanaApi');
+						const organizationUuid = credentials.organizationUuid as string;
+
+						const body: IDataObject = {
+							sourceProductUuid,
+							targetClientUuid,
+							targetClientOrganization: { organizationUuid },
+							publishToStatus,
+						};
+
+						const response = await vntanaApiRequest.call(
+							this,
+							'POST',
+							'/v1/products/move',
+							body,
+						);
+
+						const movedProduct = response.response as IDataObject;
+						returnData.push({ json: movedProduct });
 					}
 				}
 

@@ -358,3 +358,46 @@ export function isSignedUrlResponseValid(obj: unknown): obj is SignedUrlResponse
 		typeof o.blobId === 'string' &&
 		typeof o.requestUuid === 'string';
 }
+
+/**
+ * Clone Product Request Body
+ */
+export interface CloneProductRequest {
+	originalProductUuid: string;
+	clientUuid: string;
+	clientOrganization?: {
+		organizationUuid: string;
+	};
+	publishToStatus?: ProductStatus;
+	cloneHotspots?: boolean;
+	cloneAnnotations?: boolean;
+	cloneAttachments?: boolean;
+	cloneIntegrationAttributes?: boolean;
+	name?: string;
+	description?: string;
+	pipelineUuid?: string;
+	tagsUuids?: string[];
+	attributes?: IDataObject;
+}
+
+/**
+ * Move Product Request Body
+ */
+export interface MoveProductRequest {
+	sourceProductUuid: string;
+	targetClientUuid: string;
+	targetClientOrganization: {
+		organizationUuid: string;
+	};
+	publishToStatus?: ProductStatus;
+}
+
+/**
+ * Product Creation Response (used for clone/move operations)
+ */
+export interface ProductCreationResponse {
+	uuid: string;
+	name: string;
+	status: ProductStatus;
+	clientUuid: string;
+}

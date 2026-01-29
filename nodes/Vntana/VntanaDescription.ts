@@ -93,6 +93,18 @@ export const productOperations: INodeProperties = {
 			description: 'Update product name, description, status, tags, or attributes',
 			action: 'Update a product',
 		},
+		{
+			name: 'Clone',
+			value: 'clone',
+			description: 'Clone a product to the same or different workspace',
+			action: 'Clone a product',
+		},
+		{
+			name: 'Move',
+			value: 'move',
+			description: 'Move a product to a different workspace',
+			action: 'Move a product',
+		},
 	],
 	default: 'search',
 };
@@ -1615,5 +1627,238 @@ export const productUpdateStatusFields: INodeProperties[] = [
 			},
 		},
 		description: 'UUID of the workspace. Leave empty to use the default from credentials.',
+	},
+];
+
+// =============================================================================
+// PRODUCT: CLONE FIELDS
+// =============================================================================
+
+export const productCloneFields: INodeProperties[] = [
+	{
+		displayName: 'Source Product UUID',
+		name: 'originalProductUuid',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['clone'],
+			},
+		},
+		description: 'UUID of the product to clone',
+	},
+	{
+		displayName: 'Target Workspace UUID',
+		name: 'targetClientUuid',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['clone'],
+			},
+		},
+		description: 'UUID of the workspace to clone the product into',
+	},
+	{
+		displayName: 'Status',
+		name: 'publishToStatus',
+		type: 'options',
+		required: true,
+		options: [
+			{ name: 'Draft', value: 'DRAFT' },
+			{ name: 'Live Internal', value: 'LIVE_INTERNAL' },
+			{ name: 'Live Public', value: 'LIVE_PUBLIC' },
+		],
+		default: 'DRAFT',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['clone'],
+			},
+		},
+		description: 'Status to publish the cloned product as',
+	},
+	{
+		displayName: 'Clone Options',
+		name: 'cloneOptions',
+		type: 'collection',
+		placeholder: 'Add Option',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['clone'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Clone Hotspots',
+				name: 'cloneHotspots',
+				type: 'boolean',
+				default: true,
+				description: 'Whether to clone hotspots from the original product',
+			},
+			{
+				displayName: 'Clone Annotations',
+				name: 'cloneAnnotations',
+				type: 'boolean',
+				default: true,
+				description: 'Whether to clone annotations from the original product',
+			},
+			{
+				displayName: 'Clone Attachments',
+				name: 'cloneAttachments',
+				type: 'boolean',
+				default: true,
+				description: 'Whether to clone attachments from the original product',
+			},
+			{
+				displayName: 'Clone Integration Attributes',
+				name: 'cloneIntegrationAttributes',
+				type: 'boolean',
+				default: true,
+				description: 'Whether to clone integration attributes from the original product',
+			},
+		],
+	},
+	{
+		displayName: 'Optional Overrides',
+		name: 'optionalOverrides',
+		type: 'collection',
+		placeholder: 'Add Override',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['clone'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Name',
+				name: 'name',
+				type: 'string',
+				default: '',
+				description: 'Override the name of the cloned product',
+			},
+			{
+				displayName: 'Description',
+				name: 'description',
+				type: 'string',
+				default: '',
+				description: 'Override the description of the cloned product',
+			},
+			{
+				displayName: 'Pipeline UUID',
+				name: 'pipelineUuid',
+				type: 'string',
+				default: '',
+				description: 'Override the pipeline for the cloned product',
+			},
+			{
+				displayName: 'Tag UUIDs',
+				name: 'tagsUuids',
+				type: 'string',
+				default: '',
+				description: 'Comma-separated list of tag UUIDs to apply to the cloned product',
+			},
+			{
+				displayName: 'Attributes (Key-Value)',
+				name: 'attributesKeyValue',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				default: {},
+				description: 'Product attributes as key-value pairs',
+				options: [
+					{
+						name: 'values',
+						displayName: 'Attribute',
+						values: [
+							{
+								displayName: 'Key',
+								name: 'key',
+								type: 'string',
+								default: '',
+								description: 'Attribute key (e.g., SKU, Color)',
+							},
+							{
+								displayName: 'Value',
+								name: 'value',
+								type: 'string',
+								default: '',
+								description: 'Attribute value',
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Attributes (JSON)',
+				name: 'attributesJson',
+				type: 'json',
+				default: '',
+				description: 'Product attributes as JSON object. Values override Key-Value attributes for the same keys.',
+			},
+		],
+	},
+];
+
+// =============================================================================
+// PRODUCT: MOVE FIELDS
+// =============================================================================
+
+export const productMoveFields: INodeProperties[] = [
+	{
+		displayName: 'Source Product UUID',
+		name: 'sourceProductUuid',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['move'],
+			},
+		},
+		description: 'UUID of the product to move',
+	},
+	{
+		displayName: 'Target Workspace UUID',
+		name: 'targetClientUuid',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['move'],
+			},
+		},
+		description: 'UUID of the workspace to move the product to',
+	},
+	{
+		displayName: 'Status',
+		name: 'publishToStatus',
+		type: 'options',
+		required: true,
+		options: [
+			{ name: 'Draft', value: 'DRAFT' },
+			{ name: 'Live Internal', value: 'LIVE_INTERNAL' },
+			{ name: 'Live Public', value: 'LIVE_PUBLIC' },
+		],
+		default: 'DRAFT',
+		displayOptions: {
+			show: {
+				resource: ['product'],
+				operation: ['move'],
+			},
+		},
+		description: 'Status to publish the moved product as',
 	},
 ];
