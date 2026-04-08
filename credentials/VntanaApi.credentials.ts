@@ -12,7 +12,7 @@ export class VntanaApi implements ICredentialType {
 	// Test credentials by attempting login
 	test: ICredentialTestRequest = {
 		request: {
-			baseURL: 'https://api-platform.vntana.com',
+			baseURL: '={{$credentials.baseUrl}}',
 			url: '/v1/auth/login',
 			method: 'POST',
 			headers: {
@@ -66,9 +66,9 @@ export class VntanaApi implements ICredentialType {
 			displayName: 'API Base URL',
 			name: 'baseUrl',
 			type: 'string',
-			default: '',
+			default: 'https://api-platform.vntana.com',
 			required: false,
-			description: 'Optional custom API base URL for staging/test environments. Leave empty for production (https://api-platform.vntana.com)',
+			description: 'API base URL (optionally used for staging/test environments).',
 		},
 	];
 }

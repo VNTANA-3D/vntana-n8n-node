@@ -135,8 +135,7 @@ export class Vntana implements INodeType {
 				}
 
 				// Use configurable base URL or default
-				const baseUrl = credentials.baseUrl as string | undefined;
-				const apiBaseUrl = baseUrl && baseUrl.trim() ? baseUrl.trim().replace(/\/$/, '') : 'https://api-platform.vntana.com';
+				const apiBaseUrl = getBaseUrl(credentials);
 
 				try {
 					// Use httpRequest instead of deprecated request
