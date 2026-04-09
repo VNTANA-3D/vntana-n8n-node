@@ -64,26 +64,25 @@ describe('VntanaApi Credentials', () => {
 			expect(credentials.test.request).toBeDefined();
 		});
 
-		it('should test against login endpoint', () => {
-			expect(credentials.test.request?.url).toBe('/v1/auth/login');
-			expect(credentials.test.request?.method).toBe('POST');
+		it('should test against organizations endpoint', () => {
+			expect(credentials.test.request?.url).toBe('/v1/organizations');
+			expect(credentials.test.request?.method).toBe('GET');
 		});
 
-		it('should use production base URL for testing', () => {
-			expect(credentials.test.request?.baseURL).toBe('https://api-platform.vntana.com');
+		it('should use credential baseUrl expression for testing', () => {
+			expect(credentials.test.request?.baseURL).toBe('={{$credentials.baseUrl}}');
 		});
 
-		it('should send email and password in request body', () => {
-			const body = credentials.test.request?.body;
-			expect(body).toHaveProperty('email', '={{$credentials.email}}');
-			expect(body).toHaveProperty('password', '={{$credentials.password}}');
+		it('should include auth token header', () => {
+			const headers = credentials.test.request?.headers;
+			expect(headers).toHaveProperty('X-AUTH-TOKEN', '=Bearer {{$credentials.orgToken}}');
 		});
 	});
 
 	describe('property count', () => {
-		it('should have exactly 5 properties', () => {
-			// email, password, organizationUuid, defaultClientUuid, baseUrl
-			expect(credentials.properties).toHaveLength(5);
+		it('should have exactly 6 properties', () => {
+			// email, password, organizationUuid, defaultClientUuid, baseUrl, orgToken (hidden)
+			expect(credentials.properties).toHaveLength(6);
 		});
 	});
 });

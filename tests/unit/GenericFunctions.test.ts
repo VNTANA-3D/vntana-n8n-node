@@ -5,7 +5,6 @@ import {
 	validateBinaryData,
 	sanitizeFileName,
 	getBaseUrl,
-	clearTokenCache,
 	validateCredentials,
 	parseCommaSeparatedList,
 	OPTIMIZATION_PRESETS,
@@ -333,27 +332,6 @@ describe('GenericFunctions', () => {
 			const result = sanitizeFileName(longName);
 			expect(result.endsWith('.gltf')).toBe(true);
 			expect(result.length).toBe(255);
-		});
-	});
-
-	describe('clearTokenCache', () => {
-		beforeEach(() => {
-			// Clear the cache before each test
-			clearTokenCache();
-		});
-
-		it('should clear all tokens when called without arguments', () => {
-			// This is a simple test to ensure the function doesn't throw
-			expect(() => clearTokenCache()).not.toThrow();
-		});
-
-		it('should clear specific credential cache when email and org are provided', () => {
-			// This is a simple test to ensure the function doesn't throw
-			expect(() => clearTokenCache('test@example.com', 'org-uuid')).not.toThrow();
-		});
-
-		it('should not throw when clearing non-existent cache entry', () => {
-			expect(() => clearTokenCache('nonexistent@example.com', 'nonexistent-org')).not.toThrow();
 		});
 	});
 
