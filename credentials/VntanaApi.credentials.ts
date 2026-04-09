@@ -11,7 +11,7 @@ import {
 export class VntanaApi implements ICredentialType {
 	name = 'vntanaApi';
 	displayName = 'VNTANA API';
-	documentationUrl = 'https://help.vntana.com/api-documentation';
+	documentationUrl = 'https://www.vntana.com/resource/api-documentation/';
 	
 	// Test credentials by fetching organizations
 	test: ICredentialTestRequest = {

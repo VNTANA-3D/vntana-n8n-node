@@ -9,6 +9,7 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 
 import {
 	vntanaApiRequest,
@@ -489,7 +490,7 @@ export class Vntana implements INodeType {
 							.filter((uuid) => uuid.length > 0);
 
 						if (productUuids.length === 0) {
-							throw new Error('At least one Product UUID is required');
+							throw new NodeOperationError(this.getNode(), 'At least one Product UUID is required', { itemIndex: i });
 						}
 
 						const body: IDataObject = {
