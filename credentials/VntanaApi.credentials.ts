@@ -1,28 +1,76 @@
-import type {
-	ICredentialTestRequest,
-	ICredentialType,
-	INodeProperties,
+import {
+	IAuthenticateGeneric,
+	type ICredentialDataDecryptedObject,
+	type ICredentialTestRequest,
+	type ICredentialType,
+	type IHttpRequestHelper,
+	type IHttpRequestOptions,
+	type INodeProperties,
 } from 'n8n-workflow';
 
 export class VntanaApi implements ICredentialType {
 	name = 'vntanaApi';
 	displayName = 'VNTANA API';
 	documentationUrl = 'https://help.vntana.com/api-documentation';
-
-	// Test credentials by attempting login
+	
+	// Test credentials by fetching organizations
 	test: ICredentialTestRequest = {
 		request: {
 			baseURL: '={{$credentials.baseUrl}}',
-			url: '/v1/auth/login',
+			url: '/v1/organizations',
+			method: 'GET',
+			headers: {
+				'X-AUTH-TOKEN': '={{"Bearer " + $credentials.orgToken}}',
+				'Accept': 'application/json',
+			},
+		},
+	};
+
+	async preAuthentication(this: IHttpRequestHelper, credentials: ICredentialDataDecryptedObject) {
+		const { email, password, organizationUuid, baseUrl } = credentials;
+
+		// Step 1: Login to get initial token
+		const loginOptions: IHttpRequestOptions = {
 			method: 'POST',
+			url: `${baseUrl}/v1/auth/login`,
+			json: true,
+			returnFullResponse: true,
 			headers: {
 				'Content-Type': 'application/json',
 			},
-			body: {
-				email: '={{$credentials.email}}',
-				password: '={{$credentials.password}}',
+			body: { email, password },
+		};
+	
+		let loginResponse = await this.helpers.httpRequest(loginOptions);
+	
+		const loginToken = loginResponse.headers?.['x-auth-token'];
+	
+		// Step 2: Refresh token with organization UUID to get org-specific token
+		const refreshOptions: IHttpRequestOptions = {
+			method: 'POST',
+			url: `${baseUrl}/v1/auth/refresh-token`,
+			headers: {
+				'X-AUTH-TOKEN': `Bearer ${loginToken}`,
+				'organizationUuid': organizationUuid,
 			},
-		},
+			json: true,
+			returnFullResponse: true,
+		};
+	
+		let orgResponse = await this.helpers.httpRequest(refreshOptions);
+	
+		const orgToken = orgResponse.headers?.['x-auth-token'];
+
+		return { orgToken };
+	}
+
+	authenticate: IAuthenticateGeneric = {
+		type: 'generic',
+		properties: {
+			headers: {
+				'X-AUTH-TOKEN': '={{"Bearer " + $credentials.orgToken}}',
+			}
+		}
 	};
 
 	properties: INodeProperties[] = [
@@ -69,6 +117,15 @@ export class VntanaApi implements ICredentialType {
 			default: 'https://api-platform.vntana.com',
 			required: false,
 			description: 'API base URL (optionally used for staging/test environments).',
+		},
+		{
+			displayName: 'Organization Token',
+			name: 'orgToken',
+			type: 'hidden',
+			typeOptions: {
+				expirable: true,
+			},
+			default: '',
 		},
 	];
 }

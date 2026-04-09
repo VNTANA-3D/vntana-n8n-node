@@ -13,23 +13,6 @@ import { isGridResponse } from './types';
 
 const DEFAULT_BASE_URL = 'https://api-platform.vntana.com';
 
-// Token cache keyed by credential hash to ensure credential changes invalidate cache
-// Using a Map instead of module-level variable for better isolation
-interface TokenCacheEntry {
-	token: string;
-	timestamp: number;
-}
-const tokenCache = new Map<string, TokenCacheEntry>();
-const TOKEN_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-/**
- * Generate a cache key from credentials to ensure credential changes invalidate cache
- */
-function getCredentialCacheKey(email: string, organizationUuid: string): string {
-	// Use a simple hash to create a unique key per credential set
-	return `${email}:${organizationUuid}`;
-}
-
 /**
  * Get the base URL from credentials or use default
  */
@@ -116,94 +99,6 @@ export function mergeAttributes(options: IDataObject): IDataObject {
 }
 
 /**
- * Authenticate with VNTANA using email/password, then refresh with organization UUID
- * Returns a Bearer token string ready to use in headers
- */
-async function getAuthToken(
-	executeFunctions: IExecuteFunctions,
-): Promise<string> {
-	const credentials = await executeFunctions.getCredentials('vntanaApi');
-	const validatedCreds = validateCredentials(credentials);
-	const { email, password, organizationUuid } = validatedCreds;
-	const baseUrl = getBaseUrl(credentials);
-
-	// Check cache using credential-based key
-	const cacheKey = getCredentialCacheKey(email, organizationUuid);
-	const cachedEntry = tokenCache.get(cacheKey);
-	if (cachedEntry && Date.now() - cachedEntry.timestamp < TOKEN_CACHE_TTL) {
-		return cachedEntry.token;
-	}
-
-	// Step 1: Login to get initial token
-	const loginOptions: IHttpRequestOptions = {
-		method: 'POST',
-		url: `${baseUrl}/v1/auth/login`,
-		headers: {
-			'Content-Type': 'application/json',
-		},
-		body: {
-			email,
-			password,
-		},
-		json: true,
-		returnFullResponse: true,
-	};
-
-	let loginResponse;
-	try {
-		loginResponse = await executeFunctions.helpers.httpRequest(loginOptions);
-	} catch (error) {
-		throw new NodeApiError(executeFunctions.getNode(), error as JsonObject, {
-			message: 'VNTANA authentication failed',
-		});
-	}
-
-	const loginToken = loginResponse.headers?.['x-auth-token'];
-	if (!loginToken) {
-		throw new NodeApiError(executeFunctions.getNode(), {} as JsonObject, {
-			message: 'VNTANA authentication failed',
-		});
-	}
-
-	// Step 2: Refresh token with organization UUID to get org-specific token
-	const refreshOptions: IHttpRequestOptions = {
-		method: 'POST',
-		url: `${baseUrl}/v1/auth/refresh-token`,
-		headers: {
-			'X-AUTH-TOKEN': `Bearer ${loginToken}`,
-			'organizationUuid': organizationUuid,
-		},
-		json: true,
-		returnFullResponse: true,
-	};
-
-	let refreshResponse;
-	try {
-		refreshResponse = await executeFunctions.helpers.httpRequest(refreshOptions);
-	} catch (error) {
-		throw new NodeApiError(executeFunctions.getNode(), error as JsonObject, {
-			message: 'VNTANA authentication failed',
-		});
-	}
-
-	const refreshToken = refreshResponse.headers?.['x-auth-token'];
-	if (!refreshToken) {
-		throw new NodeApiError(executeFunctions.getNode(), {} as JsonObject, {
-			message: 'VNTANA authentication failed',
-		});
-	}
-
-	// Cache the token using credential-based key
-	const bearerToken = `Bearer ${refreshToken}`;
-	tokenCache.set(cacheKey, {
-		token: bearerToken,
-		timestamp: Date.now(),
-	});
-
-	return bearerToken;
-}
-
-/**
  * Make an authenticated request to the VNTANA API
  */
 export async function vntanaApiRequest(
@@ -215,7 +110,6 @@ export async function vntanaApiRequest(
 	options: Partial<IHttpRequestOptions> = {},
 ): Promise<IDataObject> {
 	// Get auth token (handles login flow automatically)
-	const authToken = await getAuthToken(this);
 	const credentials = await this.getCredentials('vntanaApi');
 	const baseUrl = getBaseUrl(credentials);
 
@@ -228,7 +122,6 @@ export async function vntanaApiRequest(
 		headers: {
 			Accept: 'application/json',
 			'Content-Type': 'application/json',
-			'X-AUTH-TOKEN': authToken,
 			...extraHeaders, // Merge additional headers without losing auth
 		},
 		qs,
@@ -253,7 +146,7 @@ export async function vntanaApiRequest(
 	}
 
 	try {
-		const response = await this.helpers.httpRequest(requestOptions);
+		const response = await this.helpers.httpRequestWithAuthentication.call(this, 'vntanaApi', requestOptions);
 
 		// VNTANA wraps responses in { success, errors, response }
 		if (response.success === false) {
@@ -279,7 +172,6 @@ export async function vntanaApiRequestBinary(
 	qs: IDataObject = {},
 ): Promise<Buffer> {
 	// Get auth token (handles login flow automatically)
-	const authToken = await getAuthToken(this);
 	const credentials = await this.getCredentials('vntanaApi');
 	const baseUrl = getBaseUrl(credentials);
 
@@ -288,7 +180,6 @@ export async function vntanaApiRequestBinary(
 		url: `${baseUrl}${endpoint}`,
 		headers: {
 			Accept: '*/*',
-			'X-AUTH-TOKEN': authToken,
 		},
 		qs,
 		encoding: 'arraybuffer',
@@ -300,7 +191,7 @@ export async function vntanaApiRequestBinary(
 	}
 
 	try {
-		const response = await this.helpers.httpRequest(requestOptions);
+		const response = await this.helpers.httpRequestWithAuthentication.call(this, 'vntanaApi', requestOptions);
 		return response as Buffer;
 	} catch (error) {
 		throw new NodeApiError(this.getNode(), error as JsonObject);
@@ -438,21 +329,6 @@ export async function getClientUuid(
 	}
 
 	return defaultClientUuid;
-}
-
-/**
- * Clear the cached token for specific credentials or all tokens
- * Call this when credentials are updated or on authentication failure
- */
-export function clearTokenCache(email?: string, organizationUuid?: string): void {
-	if (email && organizationUuid) {
-		// Clear specific credential's cache
-		const cacheKey = getCredentialCacheKey(email, organizationUuid);
-		tokenCache.delete(cacheKey);
-	} else {
-		// Clear all cached tokens
-		tokenCache.clear();
-	}
 }
 
 /**

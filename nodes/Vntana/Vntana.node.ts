@@ -8,6 +8,7 @@ import type {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
+	IRequestOptions,
 } from 'n8n-workflow';
 
 import {
@@ -60,7 +61,6 @@ import type {
 	ListPipelinesResponse,
 	AssetType,
 	OptimizationPreset,
-	CredentialTestHelpers,
 } from './types';
 
 export class Vntana implements INodeType {
@@ -136,22 +136,11 @@ export class Vntana implements INodeType {
 
 				// Use configurable base URL or default
 				const apiBaseUrl = getBaseUrl(credentials);
+				const helpers = this.helpers;
 
 				try {
-					// Use httpRequest instead of deprecated request
-					// Type assertion needed as ICredentialTestFunctions typing is incomplete (fixes C-1: Promise<any>)
-					const helpers = this.helpers as unknown as CredentialTestHelpers;
-
-					// Runtime check for httpRequest availability
-					if (!helpers.httpRequest || typeof helpers.httpRequest !== 'function') {
-						return {
-							status: 'Error',
-							message: 'Unable to test credentials: httpRequest helper not available',
-						};
-					}
-
 					// Step 1: Login to get initial token
-					const loginResponse = await helpers.httpRequest({
+					const loginResponse = await helpers.request({
 						method: 'POST',
 						url: `${apiBaseUrl}/v1/auth/login`,
 						headers: {
@@ -159,7 +148,7 @@ export class Vntana implements INodeType {
 						},
 						body: { email, password },
 						returnFullResponse: true,
-					});
+					} as IRequestOptions);
 
 					const loginToken = loginResponse.headers?.['x-auth-token'];
 					if (!loginToken) {
@@ -170,7 +159,7 @@ export class Vntana implements INodeType {
 					}
 
 					// Step 2: Refresh token with organization UUID
-					const refreshResponse = await helpers.httpRequest({
+					const refreshResponse = await helpers.request({
 						method: 'POST',
 						url: `${apiBaseUrl}/v1/auth/refresh-token`,
 						headers: {
@@ -178,7 +167,7 @@ export class Vntana implements INodeType {
 							'organizationUuid': organizationUuid,
 						},
 						returnFullResponse: true,
-					});
+					} as IRequestOptions);
 
 					const refreshToken = refreshResponse.headers?.['x-auth-token'];
 					if (!refreshToken) {
@@ -189,14 +178,14 @@ export class Vntana implements INodeType {
 					}
 
 					// Step 3: Verify the token works by fetching organizations
-					const verifyResponse = await helpers.httpRequest({
+					const verifyResponse = await helpers.request({
 						method: 'GET',
 						url: `${apiBaseUrl}/v1/organizations`,
 						headers: {
 							'X-AUTH-TOKEN': `Bearer ${refreshToken}`,
 							'Accept': 'application/json',
 						},
-					});
+					} as IRequestOptions);
 
 					if (verifyResponse.success === true) {
 						// Organizations endpoint returns { response: { grid: [...] } }
