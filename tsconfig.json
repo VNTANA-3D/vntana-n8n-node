@@ -1,9 +1,7 @@
 {
 	"compilerOptions": {
 		"strict": true,
-		"module": "commonjs",
-		"moduleResolution": "node",
-		"target": "es2019",
+		"module": "node20",
 		"lib": ["es2019"],
 		"declaration": true,
 		"skipLibCheck": true,

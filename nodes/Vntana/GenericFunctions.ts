@@ -510,7 +510,6 @@ const DANGEROUS_FILENAME_PATTERNS = [
 	/\.\./,           // Path traversal
 	/^\.+$/,          // Hidden/dot files
 	/[<>:"|?*]/,      // Invalid characters on Windows
-	// eslint-disable-next-line no-control-regex
 	/\x00/,           // Null bytes
 	/^\/|^\\/,        // Absolute paths
 ];
@@ -568,7 +567,6 @@ export function sanitizeFileName(fileName: string): string {
 	let sanitized = fileName.replace(/^.*[\\/]/, '');
 
 	// Remove null bytes
-	// eslint-disable-next-line no-control-regex
 	sanitized = sanitized.replace(/\x00/g, '');
 
 	// Remove path traversal sequences
