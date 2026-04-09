@@ -20,7 +20,7 @@ export class VntanaApi implements ICredentialType {
 			url: '/v1/organizations',
 			method: 'GET',
 			headers: {
-				'X-AUTH-TOKEN': '={{"Bearer " + $credentials.orgToken}}',
+				'X-AUTH-TOKEN': '=Bearer {{$credentials.orgToken}}',
 				'Accept': 'application/json',
 			},
 		},
@@ -41,7 +41,7 @@ export class VntanaApi implements ICredentialType {
 			body: { email, password },
 		};
 	
-		let loginResponse = await this.helpers.httpRequest(loginOptions);
+		const loginResponse = await this.helpers.httpRequest(loginOptions);
 	
 		const loginToken = loginResponse.headers?.['x-auth-token'];
 	
@@ -57,7 +57,7 @@ export class VntanaApi implements ICredentialType {
 			returnFullResponse: true,
 		};
 	
-		let orgResponse = await this.helpers.httpRequest(refreshOptions);
+		const orgResponse = await this.helpers.httpRequest(refreshOptions);
 	
 		const orgToken = orgResponse.headers?.['x-auth-token'];
 
@@ -68,7 +68,7 @@ export class VntanaApi implements ICredentialType {
 		type: 'generic',
 		properties: {
 			headers: {
-				'X-AUTH-TOKEN': '={{"Bearer " + $credentials.orgToken}}',
+				'X-AUTH-TOKEN': '=Bearer {{$credentials.orgToken}}',
 			}
 		}
 	};
