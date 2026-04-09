@@ -8,7 +8,6 @@ import type {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
-	IRequestOptions,
 } from 'n8n-workflow';
 
 import {
@@ -134,59 +133,25 @@ export class Vntana implements INodeType {
 					};
 				}
 
+				const orgToken = credentials.orgToken as string;
+				if (!orgToken) {
+					return {
+						status: 'Error',
+						message: 'Organization token was not found',
+					};
+				}
+
 				// Use configurable base URL or default
 				const apiBaseUrl = getBaseUrl(credentials);
-				const helpers = this.helpers;
-
+				
 				try {
-					// Step 1: Login to get initial token
-					const loginResponse = await helpers.request({
-						method: 'POST',
-						url: `${apiBaseUrl}/v1/auth/login`,
-						headers: {
-							'Content-Type': 'application/json',
-						},
-						body: { email, password },
-						returnFullResponse: true,
-					} as IRequestOptions);
-
-					const loginToken = loginResponse.headers?.['x-auth-token'];
-					if (!loginToken) {
-						return {
-							status: 'Error',
-							message: 'Authentication failed. Please verify your credentials.',
-						};
-					}
-
-					// Step 2: Refresh token with organization UUID
-					const refreshResponse = await helpers.request({
-						method: 'POST',
-						url: `${apiBaseUrl}/v1/auth/refresh-token`,
-						headers: {
-							'X-AUTH-TOKEN': `Bearer ${loginToken}`,
-							'organizationUuid': organizationUuid,
-						},
-						returnFullResponse: true,
-					} as IRequestOptions);
-
-					const refreshToken = refreshResponse.headers?.['x-auth-token'];
-					if (!refreshToken) {
-						return {
-							status: 'Error',
-							message: 'Authentication failed. Please verify your credentials and organization UUID.',
-						};
-					}
-
-					// Step 3: Verify the token works by fetching organizations
-					const verifyResponse = await helpers.request({
+					const verifyResponse = await this.helpers.request({
 						method: 'GET',
 						url: `${apiBaseUrl}/v1/organizations`,
 						headers: {
-							'X-AUTH-TOKEN': `Bearer ${refreshToken}`,
-							'Accept': 'application/json',
+							'X-AUTH-TOKEN': `Bearer ${orgToken}`,
 						},
-					} as IRequestOptions);
-
+					});
 					if (verifyResponse.success === true) {
 						// Organizations endpoint returns { response: { grid: [...] } }
 						const orgs = verifyResponse.response?.grid;
