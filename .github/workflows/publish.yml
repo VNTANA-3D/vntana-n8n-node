@@ -1,43 +1,65 @@
-name: Publish to npm
+# Publishes this n8n community node package to npm on every version tag push.
+#
+# Starting May 1 2026, n8n requires all community nodes to be published via
+# GitHub Actions with npm provenance statements. This workflow satisfies that
+# requirement. Provenance lets anyone cryptographically verify that a package
+# was built by this exact workflow, from this exact repository and commit.
+#
+# --- ONE-TIME SETUP ---
+#
+# Option A - OIDC Trusted Publishing (recommended, no long-lived secrets):
+#   1. Log in to npmjs.com and open your package's settings.
+#   2. Under "Publish access" -> "Trusted Publishers", click "Add a publisher".
+#   3. Select GitHub Actions and fill in:
+#        Repository owner: VNTANA-3D
+#        Repository name:  vntana-n8n-node
+#        Workflow name:    publish.yml
+#        Environment:      (leave blank)
+#   4. Leave the NPM_TOKEN secret unset in this repository.
+#
+# Option B - npm Automation Token (fallback):
+#   1. On npmjs.com: Access Tokens -> Generate New Token -> Granular Access Token.
+#      Scope it to this package with "Read and write" publish permission.
+#   2. In GitHub: Settings -> Secrets and variables -> Actions -> New secret.
+#      Name it NPM_TOKEN and paste the token value.
+#
+# --- RELEASE PROCESS ---
+#
+# Run locally:  npm run release
+# This will lint, build, prompt for a version bump, commit, tag, and push -
+# which triggers this workflow to publish to npm.
+
+name: Publish
 
 on:
-  release:
-    types: [published]
-  workflow_dispatch:  # Allow manual trigger
+  push:
+    tags:
+      - '*.*.*'
 
 jobs:
-  # Run CI tests first
-  ci:
-    uses: ./.github/workflows/ci.yml
-
-  # Run E2E tests (requires staging environment)
-  e2e:
-    uses: ./.github/workflows/e2e.yml
-    secrets: inherit
-
-  # Publish only after all tests pass
   publish:
-    name: Publish
+    name: Publish to npm
     runs-on: ubuntu-latest
-    needs: [ci, e2e]
+
     permissions:
+      id-token: write
       contents: read
-      id-token: write  # Required for OIDC trusted publishing
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: 'lts/*'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
-
-      - name: Publish to npm
-        run: npm publish --access public --provenance
+      - name: Release
+        run: |
+          [ -n "$NPM_TOKEN" ] && npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
+          npm run release
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
