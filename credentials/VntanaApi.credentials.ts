@@ -12,6 +12,7 @@ export class VntanaApi implements ICredentialType {
 	name = 'vntanaApi';
 	displayName = 'VNTANA API';
 	documentationUrl = 'https://www.vntana.com/resource/api-documentation/';
+	icon = 'file:vntana.svg' as const;
 	
 	// Test credentials by fetching organizations
 	test: ICredentialTestRequest = {
@@ -124,6 +125,7 @@ export class VntanaApi implements ICredentialType {
 			type: 'hidden',
 			typeOptions: {
 				expirable: true,
+				password: true,
 			},
 			default: '',
 		},

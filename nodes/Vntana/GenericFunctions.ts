@@ -265,6 +265,7 @@ export async function uploadToSignedUrl(
 	};
 
 	try {
+		// eslint-disable-next-line @n8n/community-nodes/no-http-request-with-manual-auth
 		await this.helpers.httpRequest(requestOptions);
 		// Google Cloud Storage signed URLs return empty response on success
 	} catch (error) {
@@ -510,6 +511,7 @@ const DANGEROUS_FILENAME_PATTERNS = [
 	/\.\./,           // Path traversal
 	/^\.+$/,          // Hidden/dot files
 	/[<>:"|?*]/,      // Invalid characters on Windows
+	// eslint-disable-next-line no-control-regex
 	/\x00/,           // Null bytes
 	/^\/|^\\/,        // Absolute paths
 ];
@@ -567,6 +569,7 @@ export function sanitizeFileName(fileName: string): string {
 	let sanitized = fileName.replace(/^.*[\\/]/, '');
 
 	// Remove null bytes
+	// eslint-disable-next-line no-control-regex
 	sanitized = sanitized.replace(/\x00/g, '');
 
 	// Remove path traversal sequences

@@ -19,25 +19,27 @@
 		"type": "git",
 		"url": "git+https://github.com/VNTANA-3D/vntana-n8n-node.git"
 	},
-	"main": "index.js",
 	"scripts": {
-		"build": "tsc && gulp build:icons",
-		"dev": "tsc --watch",
-		"lint": "eslint nodes credentials",
-		"lintfix": "eslint nodes credentials --fix",
+		"build": "n8n-node build",
+		"build:watch": "tsc --watch",
+		"dev": "n8n-node dev",
+		"lint": "n8n-node lint",
+		"lint:fix": "n8n-node lint --fix",
+		"release": "n8n-node release",
+		"prepublishOnly": "n8n-node prerelease",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"test:unit": "vitest run tests/unit",
 		"test:integration": "vitest run tests/integration",
 		"test:e2e": "vitest run tests/e2e",
-		"test:coverage": "vitest run --coverage",
-		"prepublishOnly": "npm run build"
+		"test:coverage": "vitest run --coverage"
 	},
 	"files": [
 		"dist"
 	],
 	"n8n": {
 		"n8nNodesApiVersion": 1,
+        "strict": false,
 		"credentials": [
 			"dist/credentials/VntanaApi.credentials.js"
 		],
@@ -46,27 +48,17 @@
 		]
 	},
 	"devDependencies": {
-		"@eslint/compat": "^2.0.5",
-		"@types/node": "^25.5.2",
-		"@typescript-eslint/eslint-plugin": "^8.58.1",
-		"@typescript-eslint/parser": "^8.58.1",
+        "@n8n/node-cli": "*",
+        "eslint": "9.32.0",
+        "prettier": "3.6.2",
+        "release-it": "^19.0.4",
+        "typescript": "5.9.2",
 		"@vitest/coverage-v8": "^4.1.4",
 		"dotenv": "^17.4.1",
-		"eslint": "^10.2.0",
-		"eslint-plugin-n8n-nodes-base": "^1.16.6",
-		"gulp": "^5.0.1",
-		"n8n-workflow": "^1.17.0",
 		"nock": "^14.0.12",
-		"typescript": "^6.0.2",
 		"vitest": "^4.1.4"
 	},
 	"peerDependencies": {
 		"n8n-workflow": "*"
-	},
-	"overrides": {
-		"n8n-workflow": {
-			"lodash": "4.18.1",
-			"form-data": "4.0.5"
-		}
 	}
 }

@@ -1,49 +1,25 @@
-import tseslintPlugin from '@typescript-eslint/eslint-plugin';
-import tseslintParser from '@typescript-eslint/parser';
-import n8nNodesBase from 'eslint-plugin-n8n-nodes-base';
-import { fixupPluginRules } from '@eslint/compat';
+import { config } from '@n8n/node-cli/eslint';
 
-const n8nPlugin = fixupPluginRules(n8nNodesBase);
+const n8nRulesOff = Object.fromEntries(
+	config
+		.flatMap((item) => Object.keys(item.rules ?? {}))
+		.filter(
+			(rule) =>
+				rule.startsWith('n8n-nodes-base/') || rule.startsWith('@n8n/community-nodes/'),
+		)
+		.map((rule) => [rule, 'off']),
+);
 
 export default [
-	{ ignores: ['dist/**', 'node_modules/**', 'gulpfile.js'] },
+	...config,
 	{
-		files: ['**/*.ts'],
-		languageOptions: {
-			parser: tseslintParser,
-			parserOptions: {
-				projectService: true,
-				tsconfigRootDir: import.meta.dirname,
-			},
-		},
-		plugins: {
-			'@typescript-eslint': tseslintPlugin,
-		},
+		files: ['tests/**/*.ts', 'vitest.config.ts'],
 		rules: {
-			...tseslintPlugin.configs['recommended'].rules,
-			'@typescript-eslint/no-explicit-any': 'warn',
-			'@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-			'no-console': 'warn',
-			'prefer-const': 'error',
-		},
-	},
-	{
-		files: ['nodes/**/*.ts'],
-		plugins: {
-			'n8n-nodes-base': n8nPlugin,
-		},
-		rules: {
-			...n8nNodesBase.configs.nodes.rules,
-		},
-	},
-	{
-		files: ['credentials/**/*.ts'],
-		plugins: {
-			'n8n-nodes-base': n8nPlugin,
-		},
-		rules: {
-			...n8nNodesBase.configs.credentials.rules,
-			'n8n-nodes-base/cred-class-field-documentation-url-miscased': 'off',
+			...n8nRulesOff,
+			'no-console': 'off',
+			'prefer-const': 'off',
+			'@typescript-eslint/no-explicit-any': 'off',
+			'@typescript-eslint/no-unused-vars': 'off',
 		},
 	},
 ];
