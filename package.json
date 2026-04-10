@@ -34,8 +34,13 @@
 		"test:e2e": "vitest run tests/e2e",
 		"test:coverage": "vitest run --coverage"
 	},
+	"publishConfig": {
+		"access": "public"
+	},
 	"files": [
-		"dist"
+		"dist",
+		"!dist/documentation",
+		"!dist/tests"
 	],
 	"n8n": {
 		"n8nNodesApiVersion": 1,
