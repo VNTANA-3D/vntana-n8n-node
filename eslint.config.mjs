@@ -11,6 +11,7 @@ const n8nRulesOff = Object.fromEntries(
 );
 
 export default [
+	{ ignores: ['test-upload.ts'] },
 	...config,
 	{
 		files: ['tests/**/*.ts', 'vitest.config.ts'],
