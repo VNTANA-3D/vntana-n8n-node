@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-vntana",
-	"version": "0.3.4",
+	"version": "0.4.0",
 	"description": "n8n community node for VNTANA 3D content management platform",
 	"keywords": [
 		"n8n-community-node-package",
@@ -39,7 +39,7 @@
 	],
 	"n8n": {
 		"n8nNodesApiVersion": 1,
-        "strict": false,
+		"strict": false,
 		"credentials": [
 			"dist/credentials/VntanaApi.credentials.js"
 		],
@@ -48,11 +48,11 @@
 		]
 	},
 	"devDependencies": {
-        "@n8n/node-cli": "*",
-        "eslint": "9.32.0",
-        "prettier": "3.6.2",
-        "release-it": "^19.0.4",
-        "typescript": "5.9.2",
+		"@n8n/node-cli": "*",
+		"eslint": "9.32.0",
+		"prettier": "3.6.2",
+		"release-it": "^19.0.4",
+		"typescript": "5.9.2",
 		"@vitest/coverage-v8": "^4.1.4",
 		"dotenv": "^17.4.1",
 		"nock": "^14.0.12",
