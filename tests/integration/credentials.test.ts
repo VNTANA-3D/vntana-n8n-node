@@ -18,7 +18,7 @@ describe('VntanaApi Credentials', () => {
 		});
 
 		it('should have documentation URL', () => {
-			expect(credentials.documentationUrl).toBe('https://help.vntana.com/api-documentation');
+			expect(credentials.documentationUrl).toBe('https://www.vntana.com/resource/api-documentation/');
 		});
 
 		it('should have required email property', () => {
