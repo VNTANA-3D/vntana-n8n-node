@@ -3,12 +3,11 @@ import type {
 	IExecuteFunctions,
 	IHttpRequestMethods,
 	IHttpRequestOptions,
-	INodeExecutionData,
 	JsonObject,
 } from 'n8n-workflow';
-import { NodeApiError } from 'n8n-workflow';
+import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 
-import type { ModelOpsParameters, OptimizationPreset, VntanaCredentials } from './types';
+import type { ModelOpsParameters, OptimizationPreset } from './types';
 import { isGridResponse } from './types';
 
 const DEFAULT_BASE_URL = 'https://api-platform.vntana.com';
@@ -19,35 +18,6 @@ const DEFAULT_BASE_URL = 'https://api-platform.vntana.com';
 export function getBaseUrl(credentials: IDataObject): string {
 	const baseUrl = credentials.baseUrl as string | undefined;
 	return baseUrl && baseUrl.trim() ? baseUrl.trim().replace(/\/$/, '') : DEFAULT_BASE_URL;
-}
-
-/**
- * Validate and extract typed credentials (fixes H-1: unsafe casts)
- */
-export function validateCredentials(credentials: IDataObject): VntanaCredentials {
-	const email = credentials.email;
-	const password = credentials.password;
-	const organizationUuid = credentials.organizationUuid;
-
-	if (typeof email !== 'string' || !email) {
-		throw new Error('Credentials missing required field: email');
-	}
-	if (typeof password !== 'string' || !password) {
-		throw new Error('Credentials missing required field: password');
-	}
-	if (typeof organizationUuid !== 'string' || !organizationUuid) {
-		throw new Error('Credentials missing required field: organizationUuid');
-	}
-
-	return {
-		email,
-		password,
-		organizationUuid,
-		defaultClientUuid: typeof credentials.defaultClientUuid === 'string'
-			? credentials.defaultClientUuid : undefined,
-		baseUrl: typeof credentials.baseUrl === 'string'
-			? credentials.baseUrl : undefined,
-	};
 }
 
 /**
@@ -69,7 +39,7 @@ export function parseCommaSeparatedList(value: unknown): string[] {
  * Merge attributes from key-value pairs and JSON input
  * JSON values override key-value pairs for the same keys
  */
-export function mergeAttributes(options: IDataObject): IDataObject {
+export function mergeAttributes(this: IExecuteFunctions, options: IDataObject): IDataObject {
 	const attributes: IDataObject = {};
 
 	// Extract from key-value fixedCollection
@@ -90,8 +60,8 @@ export function mergeAttributes(options: IDataObject): IDataObject {
 			if (typeof jsonAttributes === 'object' && jsonAttributes !== null && !Array.isArray(jsonAttributes)) {
 				Object.assign(attributes, jsonAttributes);
 			}
-		} catch {
-			// Silent error handling for invalid JSON as per plan
+		} catch (error) {
+			throw new NodeOperationError(this.getNode(), `Invalid JSON in "Attributes (JSON)" field: ${(error as Error).message}`);
 		}
 	}
 
@@ -270,37 +240,6 @@ export async function uploadToSignedUrl(
 			message: 'Failed to upload file to signed URL',
 		});
 	}
-}
-
-/**
- * Download binary data from a URL (e.g., attachment download)
- */
-export async function downloadFromUrl(
-	this: IExecuteFunctions,
-	url: string,
-): Promise<Buffer> {
-	const requestOptions: IHttpRequestOptions = {
-		method: 'GET',
-		url,
-		encoding: 'arraybuffer',
-		returnFullResponse: false,
-	};
-
-	try {
-		const response = await this.helpers.httpRequest(requestOptions);
-		return response as Buffer;
-	} catch (error) {
-		throw new NodeApiError(this.getNode(), error as JsonObject);
-	}
-}
-
-/**
- * Convert VNTANA API response items to n8n execution data format
- */
-export function prepareOutputItems(items: IDataObject[]): INodeExecutionData[] {
-	return items.map((item) => ({
-		json: item,
-	}));
 }
 
 /**

@@ -308,7 +308,7 @@ export class Vntana implements INodeType {
 						}
 
 						// Add attributes
-						const upload3DAttributes = mergeAttributes(additionalOptions);
+						const upload3DAttributes = mergeAttributes.call(this, additionalOptions);
 						if (Object.keys(upload3DAttributes).length > 0) {
 							productData.attributes = upload3DAttributes;
 						}
@@ -375,7 +375,7 @@ export class Vntana implements INodeType {
 						}
 
 						// Add attributes
-						const uploadAssetAttributes = mergeAttributes(additionalOptions);
+						const uploadAssetAttributes = mergeAttributes.call(this, additionalOptions);
 						if (Object.keys(uploadAssetAttributes).length > 0) {
 							productData.attributes = uploadAssetAttributes;
 						}
@@ -489,7 +489,7 @@ export class Vntana implements INodeType {
 						delete body.tags;
 
 						// Merge attributes from key-value and JSON with existing attributes
-						const newAttributes = mergeAttributes(updateFields);
+						const newAttributes = mergeAttributes.call(this, updateFields);
 						if (Object.keys(newAttributes).length > 0) {
 							const existingAttributes = (currentProduct.attributes as IDataObject) || {};
 							body.attributes = { ...existingAttributes, ...newAttributes };
@@ -586,7 +586,7 @@ export class Vntana implements INodeType {
 						}
 
 						// Merge attributes from key-value and JSON
-						const cloneAttributes = mergeAttributes(optionalOverrides);
+						const cloneAttributes = mergeAttributes.call(this, optionalOverrides);
 						if (Object.keys(cloneAttributes).length > 0) {
 							body.attributes = cloneAttributes;
 						}

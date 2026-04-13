@@ -256,16 +256,16 @@ export const tagOperations: INodeProperties = {
 	},
 	options: [
 		{
-			name: 'Search',
-			value: 'search',
-			description: 'Search for tags in a workspace',
-			action: 'Search tags',
-		},
-		{
 			name: 'Create',
 			value: 'create',
 			description: 'Create a new tag',
 			action: 'Create a tag',
+		},
+		{
+			name: 'Search',
+			value: 'search',
+			description: 'Search for tags in a workspace',
+			action: 'Search tags',
 		},
 	],
 	default: 'search',
