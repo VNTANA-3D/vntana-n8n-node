@@ -314,12 +314,14 @@ export class Vntana implements INodeType {
 						}
 
 						// Create product and upload asset
+						const upload3DCredentials = await this.getCredentials('vntanaApi');
 						const result = await createProductWithAsset.call(
 							this,
 							productData,
 							buffer,
 							fileName,
 							contentType,
+							getBaseUrl(upload3DCredentials),
 						);
 
 						returnData.push({ json: result });
@@ -379,12 +381,14 @@ export class Vntana implements INodeType {
 						}
 
 						// Create product and upload asset
+						const uploadAssetCredentials = await this.getCredentials('vntanaApi');
 						const result = await createProductWithAsset.call(
 							this,
 							productData,
 							buffer,
 							fileName,
 							contentType,
+							getBaseUrl(uploadAssetCredentials),
 						);
 
 						returnData.push({ json: result });
@@ -775,7 +779,7 @@ export class Vntana implements INodeType {
 						const signedUrl = signedUrlData.location;
 
 						// Step 2: Upload to signed URL
-						await uploadToSignedUrl.call(this, signedUrl, buffer, contentType);
+						await uploadToSignedUrl.call(this, signedUrl, buffer, contentType, baseUrl);
 
 						returnData.push({
 							json: {
@@ -844,7 +848,7 @@ export class Vntana implements INodeType {
 						const signedUrl = signedUrlData.location;
 
 						// Step 2: Upload to signed URL
-						await uploadToSignedUrl.call(this, signedUrl, buffer, contentType);
+						await uploadToSignedUrl.call(this, signedUrl, buffer, contentType, baseUrl);
 
 						returnData.push({
 							json: {

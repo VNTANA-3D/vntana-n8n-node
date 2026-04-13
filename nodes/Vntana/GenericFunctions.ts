@@ -241,17 +241,16 @@ export async function vntanaApiRequestAllItems(
 
 /**
  * Upload binary data to a signed URL (Google Cloud Storage)
- * Note: This does NOT use VNTANA auth - the signed URL includes authentication
+ * Note: This does NOT use VNTANA auth - the signed URL includes authentication.
+ * baseUrl is passed in by the caller so this function avoids touching credentials.
  */
 export async function uploadToSignedUrl(
 	this: IExecuteFunctions,
 	signedUrl: string,
 	binaryData: Buffer,
 	contentType: string,
+	baseUrl: string,
 ): Promise<void> {
-	const credentials = await this.getCredentials('vntanaApi');
-	const baseUrl = getBaseUrl(credentials);
-
 	const requestOptions: IHttpRequestOptions = {
 		method: 'PUT',
 		url: signedUrl,
@@ -265,9 +264,7 @@ export async function uploadToSignedUrl(
 	};
 
 	try {
-		// eslint-disable-next-line @n8n/community-nodes/no-http-request-with-manual-auth
 		await this.helpers.httpRequest(requestOptions);
-		// Google Cloud Storage signed URLs return empty response on success
 	} catch (error) {
 		throw new NodeApiError(this.getNode(), error as JsonObject, {
 			message: 'Failed to upload file to signed URL',
@@ -660,6 +657,7 @@ export async function createProductWithAsset(
 	binaryData: Buffer,
 	fileName: string,
 	contentType: string,
+	baseUrl: string,
 ): Promise<IDataObject> {
 	// Step 1: Create product container
 	const createResponse = await vntanaApiRequest.call(
@@ -684,7 +682,7 @@ export async function createProductWithAsset(
 	);
 
 	// Step 3: Upload file to signed URL
-	await uploadToSignedUrl.call(this, signedUrl, binaryData, contentType);
+	await uploadToSignedUrl.call(this, signedUrl, binaryData, contentType, baseUrl);
 
 	// Return combined result
 	return {
