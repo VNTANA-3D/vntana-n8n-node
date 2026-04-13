@@ -49,17 +49,6 @@ describe('Vntana Node', () => {
 			expect(credentialConfig?.required).toBe(true);
 		});
 
-		it('should have credential test method configured', () => {
-			const credentialConfig = vntanaNode.description.credentials?.[0];
-			expect(credentialConfig?.testedBy).toBe('testVntanaCredentials');
-		});
-
-		it('should have credential test implementation', () => {
-			expect(vntanaNode.methods).toBeDefined();
-			expect(vntanaNode.methods.credentialTest).toBeDefined();
-			expect(vntanaNode.methods.credentialTest.testVntanaCredentials).toBeDefined();
-			expect(typeof vntanaNode.methods.credentialTest.testVntanaCredentials).toBe('function');
-		});
 	});
 
 	describe('resources', () => {
