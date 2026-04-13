@@ -1,10 +1,6 @@
 import type {
-	ICredentialDataDecryptedObject,
-	ICredentialsDecrypted,
-	ICredentialTestFunctions,
 	IDataObject,
 	IExecuteFunctions,
-	INodeCredentialTestResult,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
@@ -81,7 +77,6 @@ export class Vntana implements INodeType {
 			{
 				name: 'vntanaApi',
 				required: true,
-				testedBy: 'testVntanaCredentials',
 			},
 		],
 		properties: [
@@ -108,88 +103,6 @@ export class Vntana implements INodeType {
 			...tagCreateFields,
 		],
 		usableAsTool: true,
-	};
-
-	methods = {
-		credentialTest: {
-			async testVntanaCredentials(
-				this: ICredentialTestFunctions,
-				credential: ICredentialsDecrypted<ICredentialDataDecryptedObject>,
-			): Promise<INodeCredentialTestResult> {
-				const credentials = credential.data;
-				if (!credentials) {
-					return {
-						status: 'Error',
-						message: 'No credentials provided',
-					};
-				}
-
-				const email = credentials.email as string;
-				const password = credentials.password as string;
-				const organizationUuid = credentials.organizationUuid as string;
-
-				if (!email || !password || !organizationUuid) {
-					return {
-						status: 'Error',
-						message: 'Email, password, and organization UUID are required',
-					};
-				}
-
-				const orgToken = credentials.orgToken as string;
-				if (!orgToken) {
-					return {
-						status: 'Error',
-						message: 'Organization token was not found',
-					};
-				}
-
-				// Use configurable base URL or default
-				const apiBaseUrl = getBaseUrl(credentials);
-				
-				try {
-					// eslint-disable-next-line @n8n/community-nodes/no-deprecated-workflow-functions
-					const verifyResponse = await this.helpers.request({
-						method: 'GET',
-						url: `${apiBaseUrl}/v1/organizations`,
-						headers: {
-							'X-AUTH-TOKEN': `Bearer ${orgToken}`,
-						},
-					});
-					if (verifyResponse.success === true) {
-						// Organizations endpoint returns { response: { grid: [...] } }
-						const orgs = verifyResponse.response?.grid;
-						const orgName = orgs?.[0]?.name || 'Unknown';
-						return {
-							status: 'OK',
-							message: `Successfully connected to VNTANA organization: ${orgName}`,
-						};
-					}
-
-					return {
-						status: 'Error',
-						message: 'Authentication succeeded but API verification failed',
-					};
-				} catch (error) {
-					const errorMessage = (error as Error).message || 'Unknown error';
-					// Normalize error messages to prevent account enumeration
-					// Don't reveal whether it's a credential issue vs permission issue
-					if (errorMessage.includes('401') ||
-						errorMessage.includes('403') ||
-						errorMessage.includes('Unauthorized') ||
-						errorMessage.includes('Forbidden')) {
-						return {
-							status: 'Error',
-							message: 'Authentication failed. Please verify your credentials and organization UUID.',
-						};
-					}
-					// For other errors (network, timeout, etc.), provide generic message
-					return {
-						status: 'Error',
-						message: 'Connection failed. Please verify your credentials and network connectivity.',
-					};
-				}
-			},
-		},
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
