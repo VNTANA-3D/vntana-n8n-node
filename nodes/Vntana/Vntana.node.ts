@@ -189,7 +189,7 @@ export class Vntana implements INodeType {
 						}
 
 						for (const product of products) {
-							returnData.push({ json: product });
+							returnData.push({ json: product, pairedItem: { item: i } });
 						}
 					}
 
@@ -233,6 +233,7 @@ export class Vntana implements INodeType {
 							binary: {
 								[binaryPropertyName]: binary,
 							},
+							pairedItem: { item: i },
 						});
 					}
 
@@ -324,7 +325,7 @@ export class Vntana implements INodeType {
 							getBaseUrl(upload3DCredentials),
 						);
 
-						returnData.push({ json: result });
+						returnData.push({ json: result, pairedItem: { item: i } });
 					}
 
 					// -------------------------------------------------------------
@@ -391,7 +392,7 @@ export class Vntana implements INodeType {
 							getBaseUrl(uploadAssetCredentials),
 						);
 
-						returnData.push({ json: result });
+						returnData.push({ json: result, pairedItem: { item: i } });
 					}
 
 					// -------------------------------------------------------------
@@ -434,6 +435,7 @@ export class Vntana implements INodeType {
 								status,
 								response: result,
 							},
+							pairedItem: { item: i },
 						});
 					}
 
@@ -505,7 +507,7 @@ export class Vntana implements INodeType {
 						);
 
 						const product = response.response as IDataObject;
-						returnData.push({ json: product });
+						returnData.push({ json: product, pairedItem: { item: i } });
 					}
 
 					// -------------------------------------------------------------
@@ -599,7 +601,7 @@ export class Vntana implements INodeType {
 						);
 
 						const clonedProduct = response.response as IDataObject;
-						returnData.push({ json: clonedProduct });
+						returnData.push({ json: clonedProduct, pairedItem: { item: i } });
 					}
 
 					// -------------------------------------------------------------
@@ -633,7 +635,7 @@ export class Vntana implements INodeType {
 						);
 
 						const movedProduct = response.response as IDataObject;
-						returnData.push({ json: movedProduct });
+						returnData.push({ json: movedProduct, pairedItem: { item: i } });
 					}
 				}
 
@@ -687,6 +689,7 @@ export class Vntana implements INodeType {
 										requestedEntityType: entityType,
 									},
 								},
+								pairedItem: { item: i },
 							});
 							continue;
 						}
@@ -726,6 +729,7 @@ export class Vntana implements INodeType {
 								binary: {
 									[binaryPropertyName]: binary,
 								},
+								pairedItem: { item: i },
 							});
 						}
 					}
@@ -791,6 +795,7 @@ export class Vntana implements INodeType {
 								blobId: signedUrlData.blobId,
 								requestUuid: signedUrlData.requestUuid,
 							},
+							pairedItem: { item: i },
 						});
 					}
 				}
@@ -860,6 +865,7 @@ export class Vntana implements INodeType {
 								blobId: signedUrlData.blobId,
 								requestUuid: signedUrlData.requestUuid,
 							},
+							pairedItem: { item: i },
 						});
 					}
 				}
@@ -888,6 +894,7 @@ export class Vntana implements INodeType {
 									name: org.name,
 									slug: org.slug,
 								},
+								pairedItem: { item: i },
 							});
 						}
 					}
@@ -917,6 +924,7 @@ export class Vntana implements INodeType {
 									name: workspace.name,
 									slug: workspace.slug,
 								},
+								pairedItem: { item: i },
 							});
 						}
 					}
@@ -946,6 +954,7 @@ export class Vntana implements INodeType {
 									name: pipeline.name,
 									description: pipeline.description,
 								},
+								pairedItem: { item: i },
 							});
 						}
 					}
@@ -996,7 +1005,7 @@ export class Vntana implements INodeType {
 						}
 
 						for (const tag of tags) {
-							returnData.push({ json: tag });
+							returnData.push({ json: tag, pairedItem: { item: i } });
 						}
 					}
 
@@ -1027,7 +1036,7 @@ export class Vntana implements INodeType {
 
 						if (existingTag) {
 							// Return existing tag instead of creating duplicate
-							returnData.push({ json: existingTag });
+							returnData.push({ json: existingTag, pairedItem: { item: i } });
 						} else {
 							// Create new tag - clientUuid and name in body only (per Postman collection)
 							const body: IDataObject = { clientUuid, name };
@@ -1045,7 +1054,7 @@ export class Vntana implements INodeType {
 							);
 
 							const tag = response.response as IDataObject;
-							returnData.push({ json: tag });
+							returnData.push({ json: tag, pairedItem: { item: i } });
 						}
 					}
 				}
