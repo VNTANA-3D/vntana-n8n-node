@@ -57,8 +57,41 @@ git push origin main --tags
 echo "   Done. CI is now publishing."
 echo ""
 
-# 5. Wait briefly then verify npm registry reflects the new version
-echo "5. Waiting ~45s for CI to publish..."
+# 5. Regenerate CHANGELOG.md — required by AGENTS.md release-notes policy
+echo "5. Regenerating CHANGELOG.md from git tags..."
+npx --yes --package=auto-changelog -- auto-changelog --commit-limit false
+if ! git diff --quiet CHANGELOG.md; then
+    git add CHANGELOG.md
+    git commit -m "docs: update CHANGELOG for v$NEW_VERSION"
+    git push origin main
+    echo "   CHANGELOG updated and pushed."
+else
+    echo "   CHANGELOG already up to date."
+fi
+echo ""
+
+# 6. Check for GitHub Release — REQUIRED (see AGENTS.md)
+echo "6. Checking for GitHub Release v$NEW_VERSION..."
+if gh release view "v$NEW_VERSION" >/dev/null 2>&1; then
+    echo "   Release already exists: $(gh release view "v$NEW_VERSION" --json url -q .url)"
+else
+    echo ""
+    echo "   ⚠️  GitHub Release for v$NEW_VERSION does NOT exist yet."
+    echo "   Per AGENTS.md, every version must have a GitHub Release with:"
+    echo "     - What's new (plain English, 1 paragraph)"
+    echo "     - Breaking changes / upgrade notes (or 'No action required')"
+    echo "     - Link to compare view"
+    echo ""
+    echo "   Create it now with:"
+    echo "     gh release create v$NEW_VERSION --title \"v$NEW_VERSION — <summary>\" --notes-file <path>"
+    echo ""
+    echo "   Or open the web editor pre-filled:"
+    echo "     https://github.com/VNTANA-3D/vntana-n8n-node/releases/new?tag=v$NEW_VERSION"
+fi
+echo ""
+
+# 7. Wait briefly then verify npm registry reflects the new version
+echo "7. Waiting ~45s for CI to publish..."
 sleep 45
 PUBLISHED=$(npm view "n8n-nodes-vntana@$NEW_VERSION" version 2>/dev/null || true)
 if [ "$PUBLISHED" = "$NEW_VERSION" ]; then
@@ -71,3 +104,4 @@ echo ""
 
 echo "=== Complete ==="
 echo "Tagged v$NEW_VERSION. CI handles npm publish."
+echo "Reminder: if you haven't already, create the GitHub Release (step 6)."

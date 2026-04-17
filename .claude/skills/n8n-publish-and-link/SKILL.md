@@ -56,13 +56,32 @@ GitHub Actions picks up `refs/tags/v*` and runs `npm publish`. Verify at https:/
 npm view n8n-nodes-vntana version
 ```
 
-### 6. Relink local n8n
+### 6. Regenerate CHANGELOG and cut the GitHub Release (REQUIRED)
+
+Per `AGENTS.md`, every published version must ship with both a `CHANGELOG.md` entry and a GitHub Release. Do not skip these — n8n's Creator Portal review looks for release notes when propagating to n8n Cloud.
+
+```bash
+NEW_VERSION=$(node -p "require('./package.json').version")
+
+# Regenerate CHANGELOG from tags
+npx --yes --package=auto-changelog -- auto-changelog --commit-limit false
+git add CHANGELOG.md
+git commit -m "docs: update CHANGELOG for v$NEW_VERSION"
+git push origin main
+
+# Create the GitHub Release (body must cover: what's new, upgrade notes, diff link)
+gh release create "v$NEW_VERSION" \
+  --title "v$NEW_VERSION — <one-line summary>" \
+  --notes-file /tmp/release-notes.md
+```
+
+### 7. Relink local n8n
 ```bash
 /Users/benconway/GitHub/VNTANA-n8n-node/.claude/skills/n8n-relink/scripts/relink.sh
 ```
 
-### 7. Final message
-Remind the user to restart n8n to pick up the new node version.
+### 8. Final message
+Remind the user to restart n8n to pick up the new node version. Also confirm the GitHub Release URL so they can share it or edit the body.
 
 ## Do NOT
 

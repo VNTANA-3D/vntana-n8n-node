@@ -48,14 +48,42 @@ npm run build
 
 # 3. Bump version (creates commit + tag)
 npm version patch   # or minor/major
+NEW_VERSION=$(node -p "require('./package.json').version")
 
 # 4. Push main + tag — this triggers the GitHub Actions publish workflow
 git push origin main --tags
 
-# 5. Wait ~30s for CI. Verify:
+# 5. REQUIRED: Regenerate CHANGELOG.md (reads all tags, writes the full file)
+npx --package=auto-changelog auto-changelog
+git add CHANGELOG.md
+git commit -m "docs: update CHANGELOG for v$NEW_VERSION"
+git push origin main
+
+# 6. REQUIRED: Create a GitHub Release with human-written notes
+#    See "Release notes requirements" below for what the body must contain.
+gh release create "v$NEW_VERSION" \
+  --title "v$NEW_VERSION — <one-line summary>" \
+  --notes-file /tmp/release-notes.md   # pre-write the body, don't inline
+
+# 7. Wait ~30s for CI. Verify:
 #    - npm email notification arrives
 #    - npm view n8n-nodes-vntana version   (should match)
+#    - gh release view v$NEW_VERSION --web  (release is live)
 ```
+
+## Release notes requirements
+
+**Every version needs both a CHANGELOG entry AND a GitHub Release.** See `AGENTS.md` for the policy. Steps 5 and 6 above are not optional — even for a one-line patch fix.
+
+The GitHub Release body must include:
+
+1. **What's new** — one paragraph in plain English. Users, not engineers.
+2. **Breaking changes / upgrade notes** — explicit steps the user must take (re-enter credential, update config, rerun workflow). If none: write "No action required".
+3. **Link to full diff** — `https://github.com/VNTANA-3D/vntana-n8n-node/compare/v<prev>...v<new>`
+
+For breaking changes, add a "Migrating from vX.Y" section with click-by-click instructions that take <2 minutes to follow.
+
+Why this is non-negotiable: n8n's Creator Portal auto-propagates new npm versions to n8n Cloud on a bi-weekly cadence, and the n8n team's review looks at release notes. Shipping without notes delays propagation.
 
 ## Testing notes
 
