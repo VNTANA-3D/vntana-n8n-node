@@ -32,16 +32,20 @@ To use this node, you need to configure VNTANA API credentials:
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| **API Token** | Yes | Organization-specific X-AUTH-TOKEN |
-| **Organization UUID** | Yes | Your VNTANA organization UUID |
-| **Default Workspace UUID** | No | Default workspace to use when not specified |
+| **Email** | Yes | Email address for your VNTANA account |
+| **Password** | Yes | Password for your VNTANA account |
+| **Organization Slug** | Yes | The slug from your platform URL (e.g. `acme-corp` in `app.vntana.com/acme-corp/...`) |
+| **Default Workspace UUID** | No | Default workspace to use when not specified in an operation |
+| **API Base URL** | No | Override the default API host (for staging/test environments) |
 
 ### Obtaining Credentials
 
-1. Log in to VNTANA with your email/password or personal access token
-2. Get your organization UUID from the organizations list
-3. Refresh your token with the organization UUID to get an org-specific token
-4. Use this org-specific token as your API Token
+Enter your email, password, and your organization's slug. The node handles the rest:
+
+1. Logs in with email/password to get an initial auth token.
+2. Resolves your Organization UUID by matching the slug against the orgs returned by `GET /v1/organizations`.
+3. Refreshes the token with that UUID to get an org-specific token.
+4. Uses that org-specific token on every subsequent request, refreshing automatically when it expires.
 
 For detailed authentication steps, see [VNTANA API Authentication](https://help.vntana.com/api-authentication).
 

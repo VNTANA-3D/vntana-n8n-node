@@ -36,11 +36,17 @@ describe('VntanaApi Credentials', () => {
 			expect(passwordProp?.required).toBe(true);
 		});
 
-		it('should have required organizationUuid property', () => {
+		it('should have required organizationSlug property', () => {
+			const slugProp = credentials.properties.find(p => p.name === 'organizationSlug');
+			expect(slugProp).toBeDefined();
+			expect(slugProp?.type).toBe('string');
+			expect(slugProp?.required).toBe(true);
+		});
+
+		it('should have hidden organizationUuid property populated by preAuthentication', () => {
 			const orgProp = credentials.properties.find(p => p.name === 'organizationUuid');
 			expect(orgProp).toBeDefined();
-			expect(orgProp?.type).toBe('string');
-			expect(orgProp?.required).toBe(true);
+			expect(orgProp?.type).toBe('hidden');
 		});
 
 		it('should have optional defaultClientUuid property', () => {
@@ -80,9 +86,9 @@ describe('VntanaApi Credentials', () => {
 	});
 
 	describe('property count', () => {
-		it('should have exactly 6 properties', () => {
-			// email, password, organizationUuid, defaultClientUuid, baseUrl, orgToken (hidden)
-			expect(credentials.properties).toHaveLength(6);
+		it('should have exactly 7 properties', () => {
+			// email, password, organizationSlug, organizationUuid (hidden), defaultClientUuid, baseUrl, orgToken (hidden)
+			expect(credentials.properties).toHaveLength(7);
 		});
 	});
 });

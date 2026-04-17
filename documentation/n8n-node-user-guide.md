@@ -41,7 +41,7 @@ Then restart your n8n instance.
 
 ## Authentication
 
-VNTANA uses a two-step authentication flow. The node handles this automatically using your email, password, and organization UUID.
+VNTANA uses a two-step authentication flow. The node handles this automatically using your email, password, and organization slug — it exchanges those for an organization-scoped API token, resolves your Organization UUID, and refreshes the token when it expires.
 
 ### Setting Up Credentials
 
@@ -53,15 +53,15 @@ VNTANA uses a two-step authentication flow. The node handles this automatically 
 |-------|----------|-------------|
 | Email | Yes | Your VNTANA account email address |
 | Password | Yes | Your VNTANA account password |
-| Organization UUID | Yes | Found in Platform Settings (see below) |
+| Organization Slug | Yes | The slug from your VNTANA platform URL (see below) |
 | Default Workspace UUID | No | Workspace to use when not specified in operations |
 | API Base URL | No | Custom API URL (defaults to api-platform.vntana.com) |
 
-### Finding Your Organization UUID
+### Finding Your Organization Slug
 
-1. Log into the [VNTANA Platform](https://platform.vntana.com)
-2. Go to **Settings** > **Organization**
-3. Copy the **Organization UUID**
+Your organization slug is part of every VNTANA platform URL. Log into [VNTANA](https://platform.vntana.com) and look at your browser address bar — the slug is the path segment right after the domain, e.g. `platform.vntana.com/acme-corp/...` → slug is `acme-corp`.
+
+If you enter an incorrect slug, the credential test will fail with a message listing the slugs your account *does* have access to, so you can pick the right one.
 
 ### Finding Workspace UUIDs
 
@@ -417,7 +417,7 @@ VNTANA accepts these 3D formats for upload:
 | Issue | Cause | Solution |
 |-------|-------|----------|
 | "Invalid credentials" | Wrong email or password | Verify login works at platform.vntana.com |
-| "Organization not found" | Invalid Organization UUID | Use Organization > List to verify UUID |
+| "Organization slug not found" | Typo in the slug, or your account lacks access to that org | The error lists available slugs — pick the correct one and re-save the credential |
 | "Authentication failed" | Token expired or invalid | Re-enter credentials in n8n |
 
 ### Workspace Issues

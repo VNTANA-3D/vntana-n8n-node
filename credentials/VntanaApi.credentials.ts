@@ -28,7 +28,12 @@ export class VntanaApi implements ICredentialType {
 	};
 
 	async preAuthentication(this: IHttpRequestHelper, credentials: ICredentialDataDecryptedObject) {
-		const { email, password, organizationUuid, baseUrl } = credentials;
+		const { email, password, organizationSlug, baseUrl } = credentials;
+
+		const slug = typeof organizationSlug === 'string' ? organizationSlug.trim().toLowerCase() : '';
+		if (!slug) {
+			throw new Error('Organization Slug is required. Enter the slug from your VNTANA platform URL (e.g. "acme-corp").');
+		}
 
 		// Step 1: Login to get initial token
 		const loginOptions: IHttpRequestOptions = {
@@ -41,12 +46,41 @@ export class VntanaApi implements ICredentialType {
 			},
 			body: { email, password },
 		};
-	
+
 		const loginResponse = await this.helpers.httpRequest(loginOptions);
-	
+
 		const loginToken = loginResponse.headers?.['x-auth-token'];
-	
-		// Step 2: Refresh token with organization UUID to get org-specific token
+
+		// Step 2: Resolve organization UUID from slug by listing orgs with the login token
+		const orgsListOptions: IHttpRequestOptions = {
+			method: 'GET',
+			url: `${baseUrl}/v1/organizations`,
+			headers: {
+				'X-AUTH-TOKEN': `Bearer ${loginToken}`,
+				Accept: 'application/json',
+			},
+			json: true,
+		};
+
+		const orgsResponse = await this.helpers.httpRequest(orgsListOptions) as {
+			response?: { grid?: Array<{ uuid?: string; slug?: string; name?: string }> };
+		};
+		const grid = orgsResponse?.response?.grid ?? [];
+		const match = grid.find(o => typeof o.slug === 'string' && o.slug.trim().toLowerCase() === slug);
+
+		if (!match?.uuid) {
+			const availableSlugs = grid
+				.map(o => o.slug)
+				.filter((s): s is string => typeof s === 'string' && s.length > 0);
+			const availableList = availableSlugs.length > 0
+				? availableSlugs.join(', ')
+				: '(no organizations returned for this account)';
+			throw new Error(`Organization slug "${organizationSlug}" not found. Available slugs: ${availableList}`);
+		}
+
+		const organizationUuid = match.uuid;
+
+		// Step 3: Refresh token with resolved organization UUID to get org-specific token
 		const refreshOptions: IHttpRequestOptions = {
 			method: 'POST',
 			url: `${baseUrl}/v1/auth/refresh-token`,
@@ -57,12 +91,12 @@ export class VntanaApi implements ICredentialType {
 			json: true,
 			returnFullResponse: true,
 		};
-	
+
 		const orgResponse = await this.helpers.httpRequest(refreshOptions);
-	
+
 		const orgToken = orgResponse.headers?.['x-auth-token'];
 
-		return { orgToken };
+		return { orgToken, organizationUuid };
 	}
 
 	authenticate: IAuthenticateGeneric = {
@@ -96,12 +130,19 @@ export class VntanaApi implements ICredentialType {
 			description: 'Password for your VNTANA account',
 		},
 		{
-			displayName: 'Organization UUID',
-			name: 'organizationUuid',
+			displayName: 'Organization Slug',
+			name: 'organizationSlug',
 			type: 'string',
 			default: '',
 			required: true,
-			description: 'UUID of your VNTANA organization',
+			placeholder: 'acme-corp',
+			description: 'The slug for your VNTANA organization. Find it in your platform URL — e.g. the "acme-corp" in app.vntana.com/acme-corp/... . The node will look up the Organization UUID automatically.',
+		},
+		{
+			displayName: 'Organization UUID',
+			name: 'organizationUuid',
+			type: 'hidden',
+			default: '',
 		},
 		{
 			displayName: 'Default Workspace UUID',

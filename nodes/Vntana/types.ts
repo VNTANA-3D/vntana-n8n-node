@@ -317,6 +317,7 @@ export interface ListPipelinesResponse {
 export interface VntanaCredentials {
 	email: string;
 	password: string;
+	organizationSlug: string;
 	organizationUuid: string;
 	defaultClientUuid?: string;
 	baseUrl?: string;
