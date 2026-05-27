@@ -18,6 +18,7 @@ import {
 	createProductWithAsset,
 	validateBinaryData,
 	sanitizeFileName,
+	ensureFileExtension,
 	parseCommaSeparatedList,
 	mergeAttributes,
 } from './GenericFunctions';
@@ -251,9 +252,9 @@ export class Vntana implements INodeType {
 						// Get binary data
 						const binaryDataInput = this.helpers.assertBinaryData(i, binaryPropertyName);
 						const buffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
-						const rawFileName = binaryDataInput.fileName || 'model.glb';
-						const fileName = sanitizeFileName(rawFileName);
+						const rawFileName = binaryDataInput.fileName || 'model';
 						const contentType = binaryDataInput.mimeType || 'application/octet-stream';
+						const fileName = ensureFileExtension(sanitizeFileName(rawFileName), binaryDataInput.fileExtension, contentType);
 
 						// Validate binary data (M-4 security fix)
 						validateBinaryData(this, buffer, fileName, contentType, 'THREE_D');
@@ -342,8 +343,8 @@ export class Vntana implements INodeType {
 						const binaryDataInput = this.helpers.assertBinaryData(i, binaryPropertyName);
 						const buffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
 						const rawFileName = binaryDataInput.fileName || 'file';
-						const fileName = sanitizeFileName(rawFileName);
 						const contentType = binaryDataInput.mimeType || 'application/octet-stream';
+						const fileName = ensureFileExtension(sanitizeFileName(rawFileName), binaryDataInput.fileExtension, contentType);
 
 						// Validate binary data (M-4 security fix)
 						// Map asset type to validation category
@@ -748,8 +749,8 @@ export class Vntana implements INodeType {
 						const buffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
 
 						const rawFileName = (options.fileName as string) || binaryData.fileName || 'upload';
-						const fileName = sanitizeFileName(rawFileName);
 						const contentType = (options.contentType as string) || binaryData.mimeType || 'application/octet-stream';
+						const fileName = ensureFileExtension(sanitizeFileName(rawFileName), binaryData.fileExtension, contentType);
 
 						// Validate binary data (M-4 security fix)
 						validateBinaryData(this, buffer, fileName, contentType, 'IMAGE');
@@ -818,8 +819,8 @@ export class Vntana implements INodeType {
 						const buffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
 
 						const rawFileName = (options.fileName as string) || binaryData.fileName || 'upload';
-						const fileName = sanitizeFileName(rawFileName);
 						const contentType = (options.contentType as string) || binaryData.mimeType || 'application/octet-stream';
+						const fileName = ensureFileExtension(sanitizeFileName(rawFileName), binaryData.fileExtension, contentType);
 
 						// Validate binary data (M-4 security fix) - no specific category for generic attachments
 						validateBinaryData(this, buffer, fileName, contentType);

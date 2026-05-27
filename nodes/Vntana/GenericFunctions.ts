@@ -533,6 +533,49 @@ export function sanitizeFileName(fileName: string): string {
 	return sanitized;
 }
 
+// MIME type to file extension mapping (used as fallback when fileExtension is not available)
+const MIME_TYPE_TO_EXTENSION: Record<string, string> = {
+	'video/mp4': 'mp4',
+	'video/quicktime': 'mov',
+	'video/webm': 'webm',
+	'video/avi': 'avi',
+	'image/png': 'png',
+	'image/jpeg': 'jpg',
+	'image/webp': 'webp',
+	'image/gif': 'gif',
+	'image/tiff': 'tiff',
+	'image/bmp': 'bmp',
+	'image/svg+xml': 'svg',
+	'application/pdf': 'pdf',
+	'model/gltf-binary': 'glb',
+	'model/gltf+json': 'gltf',
+	'model/vnd.usdz+zip': 'usdz',
+	'application/zip': 'zip',
+	'application/octet-stream': 'bin',
+};
+
+/**
+ * Ensure a filename has a valid extension.
+ * If the filename already has an extension, return it unchanged.
+ * Otherwise, use fileExtension (from n8n binary metadata) or derive from mimeType.
+ * This prevents INVALID_RESOURCE_EXTENSION errors from the VNTANA API when binary
+ * sources (e.g. HTTP nodes) provide a filename without an extension.
+ */
+export function ensureFileExtension(fileName: string, fileExtension?: string, mimeType?: string): string {
+	const lastDot = fileName.lastIndexOf('.');
+	if (lastDot > 0 && lastDot < fileName.length - 1) {
+		return fileName;
+	}
+	if (fileExtension) {
+		return `${fileName}.${fileExtension}`;
+	}
+	const ext = mimeType ? MIME_TYPE_TO_EXTENSION[mimeType] : undefined;
+	if (ext) {
+		return `${fileName}.${ext}`;
+	}
+	return fileName;
+}
+
 // =============================================================================
 // API Request Functions
 // =============================================================================
