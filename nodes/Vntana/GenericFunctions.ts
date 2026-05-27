@@ -69,6 +69,38 @@ export function mergeAttributes(this: IExecuteFunctions, options: IDataObject): 
 }
 
 /**
+ * Format the VNTANA error envelope's `errors` array into a readable message.
+ * Entries may be plain strings (error codes like "MISSING_PRODUCT_AUTO_PUBLISH_OPTION")
+ * or objects with a `message` / `errorCode`.
+ */
+function formatVntanaErrors(errors: unknown): string {
+	if (!Array.isArray(errors) || errors.length === 0) {
+		return 'Unknown VNTANA API error';
+	}
+	return errors
+		.map((e) => {
+			if (typeof e === 'string') return e;
+			if (e && typeof e === 'object') {
+				const obj = e as IDataObject;
+				return (obj.message as string) || (obj.errorCode as string) || JSON.stringify(e);
+			}
+			return String(e);
+		})
+		.join(', ');
+}
+
+/**
+ * Pull the VNTANA response envelope out of a thrown HTTP error. n8n surfaces the
+ * response body in different shapes depending on the HTTP client, so check the common
+ * locations.
+ */
+function extractResponseBody(error: unknown): IDataObject | undefined {
+	const response = (error as { response?: { body?: unknown; data?: unknown } })?.response;
+	const body = response?.body ?? response?.data;
+	return body && typeof body === 'object' ? (body as IDataObject) : undefined;
+}
+
+/**
  * Make an authenticated request to the VNTANA API
  */
 export async function vntanaApiRequest(
@@ -118,16 +150,33 @@ export async function vntanaApiRequest(
 	try {
 		const response = await this.helpers.httpRequestWithAuthentication.call(this, 'vntanaApi', requestOptions);
 
-		// VNTANA wraps responses in { success, errors, response }
+		// VNTANA wraps responses in { success, errors, response }. Note that business
+		// errors can be returned with HTTP 200 and success:false, so inspect the body.
 		if (response.success === false) {
-			const errorMessage = Array.isArray(response.errors) && response.errors.length > 0
-				? response.errors.map((e: IDataObject) => e.message || JSON.stringify(e)).join(', ')
-				: 'Unknown VNTANA API error';
-			throw new NodeApiError(this.getNode(), response as JsonObject, { message: errorMessage });
+			throw new NodeApiError(this.getNode(), response as JsonObject, {
+				message: formatVntanaErrors(response.errors),
+			});
 		}
 
 		return response as IDataObject;
 	} catch (error) {
+		// Preserve our own already-formatted error. Re-wrapping a NodeApiError would
+		// discard the specific VNTANA error code and replace it with a generic
+		// "Bad request - please check your parameters" message.
+		if (error instanceof NodeApiError) {
+			throw error;
+		}
+
+		// VNTANA business errors can also arrive as a non-2xx response (which n8n throws)
+		// whose body still carries the { success:false, errors:[...] } envelope. Surface
+		// those error codes instead of the generic HTTP status text.
+		const errorBody = extractResponseBody(error);
+		if (errorBody && Array.isArray(errorBody.errors) && errorBody.errors.length > 0) {
+			throw new NodeApiError(this.getNode(), errorBody as JsonObject, {
+				message: formatVntanaErrors(errorBody.errors),
+			});
+		}
+
 		throw new NodeApiError(this.getNode(), error as JsonObject);
 	}
 }
@@ -283,15 +332,13 @@ export const OPTIMIZATION_PRESETS: Record<OptimizationPreset, ModelOpsParameters
 			maxDimension: '2048',
 			aggression: '3',
 			lossless: 'true',
+			bakeAmbientOcclusion: 'true',
+			ambientOcclusionStrength: '1',
+			ambientOcclusionRadius: '5',
+			ambientOcclusionResolution: '1024',
 		},
-		AMBIENT_OCCLUSION: {
-			bake: 'true',
-			strength: '1',
-			radius: '5',
-			resolution: '1024',
-		},
-		PIVOT_POINT: {
-			pivot: 'bottom-center',
+		PIVOT_POINT_ALIGNMENT: {
+			pivotPoint: 'bottom-center',
 		},
 	},
 	highQuality: {
@@ -305,12 +352,10 @@ export const OPTIMIZATION_PRESETS: Record<OptimizationPreset, ModelOpsParameters
 			maxDimension: '4096',
 			aggression: '1',
 			lossless: 'true',
+			bakeAmbientOcclusion: 'false',
 		},
-		AMBIENT_OCCLUSION: {
-			bake: 'false',
-		},
-		PIVOT_POINT: {
-			pivot: 'bottom-center',
+		PIVOT_POINT_ALIGNMENT: {
+			pivotPoint: 'bottom-center',
 		},
 	},
 	mobile: {
@@ -324,15 +369,13 @@ export const OPTIMIZATION_PRESETS: Record<OptimizationPreset, ModelOpsParameters
 			maxDimension: '1024',
 			aggression: '7',
 			lossless: 'false',
+			bakeAmbientOcclusion: 'true',
+			ambientOcclusionStrength: '1',
+			ambientOcclusionRadius: '5',
+			ambientOcclusionResolution: '512',
 		},
-		AMBIENT_OCCLUSION: {
-			bake: 'true',
-			strength: '1',
-			radius: '5',
-			resolution: '512',
-		},
-		PIVOT_POINT: {
-			pivot: 'bottom-center',
+		PIVOT_POINT_ALIGNMENT: {
+			pivotPoint: 'bottom-center',
 		},
 	},
 	preserveOriginal: {
@@ -369,36 +412,31 @@ export function buildModelOpsParameters(
 	// Optimization settings
 	params.OPTIMIZATION = {
 		poly: String(advancedSettings.targetPolygonCount || 50000),
-		forcePoly: advancedSettings.forcePolygonCount ? 'true' : 'false',
+		forcePolygonCount: advancedSettings.forcePolygonCount ? 'true' : 'false',
 		obstructedGeometry: advancedSettings.removeObstructedGeometry ? 'true' : 'false',
 		bakeSmallFeatures: advancedSettings.bakeSmallFeatures ? 'true' : 'false',
 	};
 
-	// Texture compression
+	// Texture compression — ambient occlusion is configured here, not as its own block.
 	params.TEXTURE_COMPRESSION = {
 		maxDimension: String(advancedSettings.maxTextureResolution || 2048),
 		aggression: String(advancedSettings.textureCompressionAggression || 3),
 		lossless: advancedSettings.losslessTextureCompression ? 'true' : 'false',
-		ktx2: advancedSettings.useKTX2Format ? 'true' : 'false',
+		useKTX: advancedSettings.useKTX2Format ? 'true' : 'false',
 	};
 
-	// Ambient occlusion
 	if (advancedSettings.bakeAmbientOcclusion) {
-		params.AMBIENT_OCCLUSION = {
-			bake: 'true',
-			strength: String(advancedSettings.aoStrength || 1),
-			radius: String(advancedSettings.aoRadius || 5),
-			resolution: String(advancedSettings.aoResolution || 1024),
-		};
+		params.TEXTURE_COMPRESSION.bakeAmbientOcclusion = 'true';
+		params.TEXTURE_COMPRESSION.ambientOcclusionStrength = String(advancedSettings.aoStrength || 1);
+		params.TEXTURE_COMPRESSION.ambientOcclusionRadius = String(advancedSettings.aoRadius || 5);
+		params.TEXTURE_COMPRESSION.ambientOcclusionResolution = String(advancedSettings.aoResolution || 1024);
 	} else {
-		params.AMBIENT_OCCLUSION = {
-			bake: 'false',
-		};
+		params.TEXTURE_COMPRESSION.bakeAmbientOcclusion = 'false';
 	}
 
 	// Pivot point
-	params.PIVOT_POINT = {
-		pivot: (advancedSettings.pivotPoint as string) || 'bottom-center',
+	params.PIVOT_POINT_ALIGNMENT = {
+		pivotPoint: (advancedSettings.pivotPoint as string) || 'bottom-center',
 	};
 
 	return params;

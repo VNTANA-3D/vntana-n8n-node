@@ -229,7 +229,7 @@ export interface ModelOpsParameters {
 	};
 	OPTIMIZATION?: {
 		poly?: string;
-		forcePoly?: string;
+		forcePolygonCount?: string;
 		obstructedGeometry?: string;
 		bakeSmallFeatures?: string;
 		desiredOutput?: string;
@@ -238,16 +238,15 @@ export interface ModelOpsParameters {
 		maxDimension?: string;
 		aggression?: string;
 		lossless?: string;
-		ktx2?: string;
+		useKTX?: string;
+		// Ambient occlusion is configured inside TEXTURE_COMPRESSION, not as its own block.
+		bakeAmbientOcclusion?: string;
+		ambientOcclusionStrength?: string;
+		ambientOcclusionRadius?: string;
+		ambientOcclusionResolution?: string;
 	};
-	AMBIENT_OCCLUSION?: {
-		bake?: string;
-		strength?: string;
-		radius?: string;
-		resolution?: string;
-	};
-	PIVOT_POINT?: {
-		pivot?: string;
+	PIVOT_POINT_ALIGNMENT?: {
+		pivotPoint?: string;
 	};
 }
 

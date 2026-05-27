@@ -7,6 +7,7 @@ import {
 	getBaseUrl,
 	parseCommaSeparatedList,
 	OPTIMIZATION_PRESETS,
+	vntanaApiRequest,
 } from '../../nodes/Vntana/GenericFunctions';
 import { isGridResponse } from '../../nodes/Vntana/types';
 
@@ -124,18 +125,18 @@ describe('GenericFunctions', () => {
 
 				expect(result.DRACO_COMPRESSION?.enabled).toBe('true');
 				expect(result.OPTIMIZATION?.poly).toBe('75000');
-				expect(result.OPTIMIZATION?.forcePoly).toBe('true');
+				expect(result.OPTIMIZATION?.forcePolygonCount).toBe('true');
 				expect(result.OPTIMIZATION?.obstructedGeometry).toBe('true');
 				expect(result.OPTIMIZATION?.bakeSmallFeatures).toBe('false');
 				expect(result.TEXTURE_COMPRESSION?.maxDimension).toBe('4096');
 				expect(result.TEXTURE_COMPRESSION?.aggression).toBe('5');
 				expect(result.TEXTURE_COMPRESSION?.lossless).toBe('false');
-				expect(result.TEXTURE_COMPRESSION?.ktx2).toBe('true');
-				expect(result.AMBIENT_OCCLUSION?.bake).toBe('true');
-				expect(result.AMBIENT_OCCLUSION?.strength).toBe('2');
-				expect(result.AMBIENT_OCCLUSION?.radius).toBe('10');
-				expect(result.AMBIENT_OCCLUSION?.resolution).toBe('2048');
-				expect(result.PIVOT_POINT?.pivot).toBe('center');
+				expect(result.TEXTURE_COMPRESSION?.useKTX).toBe('true');
+				expect(result.TEXTURE_COMPRESSION?.bakeAmbientOcclusion).toBe('true');
+				expect(result.TEXTURE_COMPRESSION?.ambientOcclusionStrength).toBe('2');
+				expect(result.TEXTURE_COMPRESSION?.ambientOcclusionRadius).toBe('10');
+				expect(result.TEXTURE_COMPRESSION?.ambientOcclusionResolution).toBe('2048');
+				expect(result.PIVOT_POINT_ALIGNMENT?.pivotPoint).toBe('center');
 			});
 
 			it('should use default values when advanced settings are partial', () => {
@@ -148,7 +149,7 @@ describe('GenericFunctions', () => {
 				expect(result.DRACO_COMPRESSION?.enabled).toBe('false');
 				expect(result.OPTIMIZATION?.poly).toBe('50000'); // default
 				expect(result.TEXTURE_COMPRESSION?.maxDimension).toBe('2048'); // default
-				expect(result.PIVOT_POINT?.pivot).toBe('bottom-center'); // default
+				expect(result.PIVOT_POINT_ALIGNMENT?.pivotPoint).toBe('bottom-center'); // default
 			});
 
 			it('should set ambient occlusion bake to false when disabled', () => {
@@ -158,8 +159,8 @@ describe('GenericFunctions', () => {
 
 				const result = buildModelOpsParameters('advanced', undefined, advancedSettings);
 
-				expect(result.AMBIENT_OCCLUSION?.bake).toBe('false');
-				expect(result.AMBIENT_OCCLUSION?.strength).toBeUndefined();
+				expect(result.TEXTURE_COMPRESSION?.bakeAmbientOcclusion).toBe('false');
+				expect(result.TEXTURE_COMPRESSION?.ambientOcclusionStrength).toBeUndefined();
 			});
 		});
 	});
@@ -433,6 +434,72 @@ describe('GenericFunctions', () => {
 		it('should return true even without totalCount', () => {
 			const response = { grid: [] };
 			expect(isGridResponse(response)).toBe(true);
+		});
+	});
+
+	describe('vntanaApiRequest error handling', () => {
+		// Build a mock execution context whose authenticated HTTP call behaves as `http` dictates.
+		function mockContext(http: () => unknown): IExecuteFunctions {
+			return {
+				getNode: () => ({
+					name: 'VNTANA',
+					type: 'n8n-nodes-vntana.vntana',
+					typeVersion: 1,
+					position: [0, 0],
+					parameters: {},
+				} as INode),
+				getCredentials: async () => ({ baseUrl: 'https://api-platform.vntana.com' }),
+				helpers: {
+					httpRequestWithAuthentication: vi.fn(async () => http()),
+				},
+			} as unknown as IExecuteFunctions;
+		}
+
+		it('surfaces a string error code from a 200 success:false envelope', async () => {
+			const ctx = mockContext(() => ({
+				success: false,
+				errors: ['MISSING_PRODUCT_AUTO_PUBLISH_OPTION'],
+				response: null,
+			}));
+
+			await expect(
+				vntanaApiRequest.call(ctx, 'POST', '/v1/products', { name: 'x' }),
+			).rejects.toThrow('MISSING_PRODUCT_AUTO_PUBLISH_OPTION');
+		});
+
+		it('does not wrap string error codes in quotes', async () => {
+			const ctx = mockContext(() => ({ success: false, errors: ['BAD_REQUEST'], response: null }));
+
+			await expect(
+				vntanaApiRequest.call(ctx, 'POST', '/v1/products', { name: 'x' }),
+			).rejects.toThrow(/(?<!")BAD_REQUEST(?!")/);
+		});
+
+		it('surfaces an object error message from the envelope', async () => {
+			const ctx = mockContext(() => ({
+				success: false,
+				errors: [{ message: 'Workspace not found' }],
+				response: null,
+			}));
+
+			await expect(
+				vntanaApiRequest.call(ctx, 'POST', '/v1/products', { name: 'x' }),
+			).rejects.toThrow('Workspace not found');
+		});
+
+		it('surfaces VNTANA error codes from a thrown non-2xx response body', async () => {
+			// n8n throws on non-2xx; the VNTANA envelope rides along on error.response.body.
+			const ctx = mockContext(() => {
+				const error = new Error('Request failed with status 400') as Error & {
+					response?: { body?: unknown };
+				};
+				error.response = { body: { success: false, errors: ['BAD_REQUEST'], response: null } };
+				throw error;
+			});
+
+			await expect(
+				vntanaApiRequest.call(ctx, 'POST', '/v1/products', { name: 'x' }),
+			).rejects.toThrow('BAD_REQUEST');
 		});
 	});
 });
