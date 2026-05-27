@@ -14,6 +14,10 @@ export interface TestConfig {
 	email: string;
 	password: string;
 	organizationUuid: string;
+	// Organization slug — what users enter in the node credential. Optional at the config
+	// level (the standalone test client only needs the UUID); tests that drive the real
+	// credential preAuthentication skip when it's missing.
+	organizationSlug: string;
 	workspaceUuid: string;
 	pipelineUuid: string;
 	baseUrl: string;
@@ -31,6 +35,7 @@ export function getTestConfig(): TestConfig {
 	const email = process.env.VNTANA_TEST_EMAIL || process.env.VNTANA_EMAIL;
 	const password = process.env.VNTANA_TEST_PASSWORD || process.env.VNTANA_PASSWORD;
 	const organizationUuid = process.env.VNTANA_TEST_ORG_UUID || process.env.VNTANA_ORGANIZATION_UUID;
+	const organizationSlug = process.env.VNTANA_TEST_ORG_SLUG || process.env.VNTANA_ORGANIZATION_SLUG || '';
 	const workspaceUuid = process.env.VNTANA_TEST_WORKSPACE_UUID || process.env.VNTANA_WORKSPACE_UUID;
 	const pipelineUuid = process.env.VNTANA_TEST_PIPELINE_UUID || process.env.VNTANA_PIPELINE_UUID || '';
 	const baseUrl = process.env.VNTANA_API_BASE_URL || 'https://api-platform.vntana.com';
@@ -54,6 +59,7 @@ export function getTestConfig(): TestConfig {
 		email: email!,
 		password: password!,
 		organizationUuid: organizationUuid!,
+		organizationSlug,
 		workspaceUuid: workspaceUuid!,
 		pipelineUuid,
 		baseUrl,
