@@ -291,6 +291,11 @@ export class Vntana implements INodeType {
 							pipelineUuid,
 							assetType: 'THREE_D' as AssetType,
 							modelOpsParameters,
+							// publishToStatus is required by POST /v1/products (it replaced the legacy
+							// autoPublish flag). Without it the API rejects creation with
+							// MISSING_PRODUCT_AUTO_PUBLISH_OPTION. Derive it from the chosen Status,
+							// defaulting to DRAFT.
+							publishToStatus: (additionalOptions.status as string) || 'DRAFT',
 						};
 
 						// Add optional fields
@@ -358,6 +363,11 @@ export class Vntana implements INodeType {
 							name,
 							clientUuid,
 							assetType,
+							// publishToStatus is required by POST /v1/products (it replaced the legacy
+							// autoPublish flag). Without it the API rejects creation with
+							// MISSING_PRODUCT_AUTO_PUBLISH_OPTION. Derive it from the chosen Status,
+							// defaulting to DRAFT.
+							publishToStatus: (additionalOptions.status as string) || 'DRAFT',
 						};
 
 						// Add optional fields
